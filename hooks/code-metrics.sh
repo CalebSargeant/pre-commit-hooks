@@ -42,12 +42,16 @@ if command -v radon >/dev/null 2>&1; then
     radon cc . -s 2>/dev/null | head -5 || echo "  No Python files or radon unavailable"
 fi
 
-# Security analysis summary
-echo ""
-echo -e "${BLUE}Security Summary:${NC}"
-echo "  Secrets baseline: $([ -f '.secrets.baseline' ] && echo 'Present' || echo 'Missing')"
-echo "  Gitignore: $([ -f '.gitignore' ] && echo 'Present' || echo 'Missing')"
-echo "  License file: $([ -f 'LICENSE' ] && echo 'Present' || echo 'Missing')"
+security_summary() {
+    echo ""
+    echo -e "${BLUE}Security Summary:${NC}"
+    echo "  Secrets baseline: $([[ -f '.secrets.baseline' ]] && echo 'Present' || echo 'Missing')"
+    echo "  Gitignore: $([[ -f '.gitignore' ]] && echo 'Present' || echo 'Missing')"
+    echo "  License file: $([[ -f 'LICENSE' ]] && echo 'Present' || echo 'Missing')"
+    return 0
+}
+
+security_summary
 
 echo -e "${GREEN}✅ Code metrics collection completed${NC}"
 exit 0

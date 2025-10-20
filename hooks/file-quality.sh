@@ -20,7 +20,7 @@ echo -e "${BLUE}File Quality Validation${NC}"
 
 # Get files to check
 STAGED=$(git diff --cached --name-only)
-if [ -n "$STAGED" ]; then
+if [[ -n "$STAGED" ]]; then
     FILES="$STAGED"
 else
     FILES=$(git ls-files | head -50)
@@ -40,7 +40,7 @@ fi
 # ✂️ Check for trailing whitespace
 # ----------------------------------------------------------------------
 TW_FILES=$(echo "$FILES" | xargs -n1 -I{} grep -l "[[:space:]]$" "{}" 2>/dev/null | head -5 || true)
-if [ -n "$TW_FILES" ]; then
+if [[ -n "$TW_FILES" ]]; then
     echo -e "${YELLOW}⚠ Files with trailing whitespace found${NC}"
     echo "$TW_FILES"
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
@@ -50,7 +50,7 @@ fi
 # 📦 Check for large files (>1MB)
 # ----------------------------------------------------------------------
 LARGE_FILES=$(echo "$FILES" | xargs ls -la 2>/dev/null | awk '$5 > 1048576 {print $9}' || true)
-if [ -n "$LARGE_FILES" ]; then
+if [[ -n "$LARGE_FILES" ]]; then
     echo -e "${YELLOW}⚠ Large files detected (>1MB):${NC}"
     echo "$LARGE_FILES" | head -3
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
@@ -60,20 +60,19 @@ fi
 # 🧾 YAML validation
 # ----------------------------------------------------------------------
 YAML_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml)$" || true)
-if [ -n "$YAML_FILES" ] && command -v yamllint >/dev/null 2>&1; then
-    if ! echo "$YAML_FILES" | xargs -n1 yamllint -d '{extends: relaxed, rules: {line-length: {max: 120}}}' >/dev/null 2>&1; then
-        echo -e "${YELLOW}⚠ YAML formatting issues found${NC}"
-        ISSUES_FOUND=$((ISSUES_FOUND + 1))
-    fi
+if [[ -n "$YAML_FILES" ]] && command -v yamllint >/dev/null 2>&1 && \
+   ! echo "$YAML_FILES" | xargs -n1 yamllint -d '{extends: relaxed, rules: {line-length: {max: 120}}}' >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠ YAML formatting issues found${NC}"
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
 
 # ----------------------------------------------------------------------
 # 🧩 JSON validation
 # ----------------------------------------------------------------------
 JSON_FILES=$(echo "$FILES" | grep "\.json$" || true)
-if [ -n "$JSON_FILES" ]; then
+if [[ -n "$JSON_FILES" ]]; then
     for json_file in $JSON_FILES; do
-        if [ -f "$json_file" ] && ! python3 -m json.tool "$json_file" >/dev/null 2>&1; then
+        if [[ -f "$json_file" ]] && ! python3 -m json.tool "$json_file" >/dev/null 2>&1; then
             echo -e "${RED}❌ Invalid JSON: $json_file${NC}"
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
         fi
@@ -85,7 +84,7 @@ fi
 # ----------------------------------------------------------------------
 if command -v shfmt >/dev/null 2>&1; then
     SHFMT_OUT=$(shfmt -d hooks 2>&1 || true)
-    if [ -n "$SHFMT_OUT" ]; then
+    if [[ -n "$SHFMT_OUT" ]]; then
         echo -e "${YELLOW}⚠ Shell formatting issues detected by shfmt:${NC}"
         echo "$SHFMT_OUT" | head -50
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
@@ -96,7 +95,7 @@ fi
 # 🧪 GitHub Actions workflow lint (actionlint)
 # ----------------------------------------------------------------------
 WF_FILES=$(echo "$FILES" | grep -E '^\.github/workflows/.*\.ya?ml$' || true)
-if [ -n "$WF_FILES" ] || [ -d ".github/workflows" ]; then
+if [[ -n "$WF_FILES" || -d ".github/workflows" ]]; then
     if command -v actionlint >/dev/null 2>&1; then
         # Disable ShellCheck integration to avoid dependency on shellcheck
         if ! actionlint -color -shellcheck= 2>&1; then
@@ -111,12 +110,12 @@ fi
 # ----------------------------------------------------------------------
 MIXED_ENDINGS=$(echo "$FILES" | xargs grep -IlU $'\r' 2>/dev/null || true)
 for f in $FILES; do
-    if [ -f "$f" ] && grep -q $'\r' "$f" 2>/dev/null; then
+    if [[ -f "$f" ]] && grep -q $'\r' "$f" 2>/dev/null; then
         MIXED_ENDINGS="$MIXED_ENDINGS\n$f"
     fi
 done
 MIXED_ENDINGS=$(echo -e "$MIXED_ENDINGS" | sed '/^$/d' | head -3)
-if [ -n "$MIXED_ENDINGS" ]; then
+if [[ -n "$MIXED_ENDINGS" ]]; then
     echo -e "${YELLOW}⚠ Files with Windows (CRLF) line endings detected:${NC}"
     echo "$MIXED_ENDINGS"
     echo -e "   Consider converting with 'dos2unix <file>'."
@@ -128,12 +127,12 @@ fi
 # ----------------------------------------------------------------------
 BOM_FILES=""
 for f in $FILES; do
-    if [ -f "$f" ] && head -c 3 "$f" | grep -q $'\xEF\xBB\xBF'; then
+    if [[ -f "$f" ]] && head -c 3 "$f" | grep -q $'\xEF\xBB\xBF'; then
         BOM_FILES="$BOM_FILES\n$f"
     fi
 done
 BOM_FILES=$(echo -e "$BOM_FILES" | sed '/^$/d' | head -3)
-if [ -n "$BOM_FILES" ]; then
+if [[ -n "$BOM_FILES" ]]; then
     echo -e "${YELLOW}⚠ Files containing UTF-8 Byte Order Marks (BOM):${NC}"
     echo "$BOM_FILES"
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
@@ -143,7 +142,7 @@ fi
 # ⚙️ Shebang validation for executable scripts
 # ----------------------------------------------------------------------
 EXEC_FILES=$(echo "$FILES" | xargs file 2>/dev/null | grep "executable" | cut -d: -f1 || true)
-if [ -n "$EXEC_FILES" ]; then
+if [[ -n "$EXEC_FILES" ]]; then
     for f in $EXEC_FILES; do
         if ! head -n1 "$f" | grep -Eq '^#!'; then
             echo -e "${YELLOW}⚠ Executable missing shebang: $f${NC}"
@@ -155,7 +154,7 @@ fi
 # ----------------------------------------------------------------------
 # ✅ Summary
 # ----------------------------------------------------------------------
-if [ $ISSUES_FOUND -eq 0 ]; then
+if [[ $ISSUES_FOUND -eq 0 ]]; then
     echo -e "${GREEN}✅ File quality checks passed${NC}"
     exit 0
 else
