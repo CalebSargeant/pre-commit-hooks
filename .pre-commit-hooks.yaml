@@ -24,11 +24,11 @@
 
 - id: actions-pin-sha
   name: 🔗 GitHub Actions SHA pinning
-  description: Pin uses -> owner/repo@ref to full commit SHAs with full semver comments; falls back to latest semver when needed
+  description: Pin uses:- owner/repo@ref to full commit SHAs with full semver comments; falls back to latest semver when needed
   entry: hooks/github-actions-pin-sha.sh
   language: script
   files: '^\.github/workflows/.*\.ya?ml$'
-  stages: [pre-commit]
+  stages: [pre-push]
   require_serial: true
 
 - id: security-scan
