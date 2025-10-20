@@ -132,15 +132,13 @@ echo -e "${BOLD}Running basic syntax checks...${NC}"
 SYNTAX_ISSUES=0
 
 for js_file in $JS_FILES; do
-    if [[ -f "$js_file" ]]; then
-        # Basic Node.js syntax check
-        if command -v node &> /dev/null; then
-            if node --check "$js_file" 2>/dev/null; then
-                echo -e "  ${GREEN}✓ $js_file syntax OK${NC}"
-            else
-                echo -e "  ${RED}❌ $js_file has syntax errors${NC}"
-                SYNTAX_ISSUES=$((SYNTAX_ISSUES + 1))
-            fi
+    # Combine file existence and Node availability checks
+    if [[ -f "$js_file" ]] && command -v node >/dev/null 2>&1; then
+        if node --check "$js_file" 2>/dev/null; then
+            echo -e "  ${GREEN}✓ $js_file syntax OK${NC}"
+        else
+            echo -e "  ${RED}❌ $js_file has syntax errors${NC}"
+            SYNTAX_ISSUES=$((SYNTAX_ISSUES + 1))
         fi
     fi
 done

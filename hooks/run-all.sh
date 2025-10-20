@@ -6,7 +6,7 @@
 
 set -Eeuo pipefail
 
-# Colours for output
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -15,11 +15,16 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 BOLD='\033[1m'
 
+# Constants
+STAGE_PRE_COMMIT="pre-commit"
+STAGE_PRE_PUSH="pre-push"
+STAGE_BOTH="both"
+
 # Configuration
 FAIL_ON_HIGH_SEVERITY=${FAIL_ON_HIGH_SEVERITY:-true}
 FAIL_ON_MEDIUM_SEVERITY=${FAIL_ON_MEDIUM_SEVERITY:-false}
-PRE_COMMIT_STAGE=${PRE_COMMIT_FROM_REF:+pre-push}
-PRE_COMMIT_STAGE=${PRE_COMMIT_STAGE:-pre-commit}
+PRE_COMMIT_STAGE=${PRE_COMMIT_FROM_REF:+$STAGE_PRE_PUSH}
+PRE_COMMIT_STAGE=${PRE_COMMIT_STAGE:-$STAGE_PRE_COMMIT}
 
 echo -e "${BOLD}${BLUE}🚀 Complete Code Quality & Security Pipeline${NC}"
 echo -e "${BOLD}${BLUE}═══════════════════════════════════════════════════════════════${NC}"
@@ -47,7 +52,7 @@ run_validation() {
     local description=$4
     
     # Skip if not appropriate stage
-    if [[ "$PRE_COMMIT_STAGE" != "$stage" && "$stage" != "both" ]]; then
+    if [[ "$PRE_COMMIT_STAGE" != "$stage" && "$stage" != "$STAGE_BOTH" ]]; then
         return 0
     fi
     
@@ -68,6 +73,9 @@ run_validation() {
             case "$script_name" in
               *security*|*syntax*)
                 CRITICAL_FAILURES=$((CRITICAL_FAILURES + 1))
+                ;;
+              *)
+                :
                 ;;
             esac
         fi
@@ -98,33 +106,33 @@ HAS_TERRAFORM=$(echo "$FILES" | grep -qE "\.(tf|hcl)$" && echo "true" || echo "f
 HAS_DOCKER=$(echo "$FILES" | grep -qE "(Dockerfile|docker-compose.*\.ya?ml)" && echo "true" || echo "false")
 
 # Always run security checks (critical)
-run_validation "🛡️  Security Scan" "both" "security-check.sh" "Comprehensive security scanning"
+run_validation "🛡️  Security Scan" "$STAGE_BOTH" "security-check.sh" "Comprehensive security scanning"
 
 # Language-specific validations
 if [[ "$HAS_PYTHON" = "true" ]]; then
-    run_validation "🐍 Python Quality" "pre-commit" "python-quality.sh" "Python formatting, linting, and security"
+    run_validation "🐍 Python Quality" "$STAGE_PRE_COMMIT" "python-quality.sh" "Python formatting, linting, and security"
 fi
 
 if [[ "$HAS_JAVASCRIPT" = "true" ]]; then
-    run_validation "📋 JavaScript Quality" "pre-commit" "javascript-quality.sh" "JavaScript/TypeScript formatting and linting"
+    run_validation "📋 JavaScript Quality" "$STAGE_PRE_COMMIT" "javascript-quality.sh" "JavaScript/TypeScript formatting and linting"
 fi
 
 if [[ "$HAS_TERRAFORM" = "true" ]]; then
-    run_validation "🏗️  Infrastructure" "pre-commit" "terraform-quality.sh" "Terraform validation and security"
+    run_validation "🏗️  Infrastructure" "$STAGE_PRE_COMMIT" "terraform-quality.sh" "Terraform validation and security"
 fi
 
 if [[ "$HAS_DOCKER" = "true" ]]; then
-    run_validation "🐋 Container Security" "pre-commit" "docker-security.sh" "Docker and container validation"
+    run_validation "🐋 Container Security" "$STAGE_PRE_COMMIT" "docker-security.sh" "Docker and container validation"
 fi
 
 # General file validations
-run_validation "📁 File Quality" "pre-commit" "file-quality.sh" "General file validation and formatting"
+run_validation "📁 File Quality" "$STAGE_PRE_COMMIT" "file-quality.sh" "General file validation and formatting"
 
 # Pre-push only validations (comprehensive/expensive)
-if [[ "$PRE_COMMIT_STAGE" = "pre-push" ]]; then
-    run_validation "⚡ Performance Check" "pre-push" "performance-check.sh" "Performance regression testing"
-    run_validation "⚖️  License Compliance" "pre-push" "license-check.sh" "Dependency license validation"
-    run_validation "📊 Code Metrics" "pre-push" "code-metrics.sh" "Code quality metrics and analysis"
+if [[ "$PRE_COMMIT_STAGE" = "$STAGE_PRE_PUSH" ]]; then
+    run_validation "⚡ Performance Check" "$STAGE_PRE_PUSH" "performance-check.sh" "Performance regression testing"
+    run_validation "⚖️  License Compliance" "$STAGE_PRE_PUSH" "license-check.sh" "Dependency license validation"
+    run_validation "📊 Code Metrics" "$STAGE_PRE_PUSH" "code-metrics.sh" "Code quality metrics and analysis"
 fi
 
 # Summary and final decision
