@@ -95,8 +95,8 @@ fi
 # 🧪 GitHub Actions workflow lint (actionlint)
 # ----------------------------------------------------------------------
 WF_FILES=$(echo "$FILES" | grep -E '^\.github/workflows/.*\.ya?ml$' || true)
-if [[ ( -n "$WF_FILES" || -d ".github/workflows" ) && command -v actionlint >/dev/null 2>&1 && \
-      ! actionlint -color -shellcheck= 2>&1 ]]; then
+if [[ -n "$WF_FILES" || -d ".github/workflows" ]] && command -v actionlint >/dev/null 2>&1 && \
+   ! actionlint -color -shellcheck= 2>&1 >/dev/null; then
     echo -e "${YELLOW}⚠ actionlint found issues in workflow files${NC}"
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi

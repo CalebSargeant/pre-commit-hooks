@@ -197,7 +197,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 # Check for large files that might contain secrets
 echo -e "${BLUE}Checking for large files...${NC}"
-LARGE_FILES=$(find . -type f -size +1M 2>/dev/null | grep -v ".git" | head -5)
+LARGE_FILES=$(find . -type f -size +1M 2>/dev/null | grep -v ".git" | head -5 || true)
 if [[ -n "$LARGE_FILES" ]]; then
     echo -e "  ${YELLOW}⚠ Large files found (potential data leaks):${NC}"
     echo "$LARGE_FILES" | sed 's/^/    /'
