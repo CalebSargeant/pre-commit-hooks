@@ -126,6 +126,7 @@ if [[ "$HAS_DOCKER" = "true" ]]; then
 fi
 
 # General file validations
+run_validation "🔗 Actions SHA pinning" "$STAGE_PRE_COMMIT" "github-actions-pin-sha.sh" "Pin GitHub Actions to SHAs with semver comments"
 run_validation "📁 File Quality" "$STAGE_PRE_COMMIT" "file-quality.sh" "General file validation and formatting"
 
 # Pre-push only validations (comprehensive/expensive)

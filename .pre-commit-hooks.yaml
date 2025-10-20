@@ -21,6 +21,16 @@
   language: script
   types: [text]
   stages: [pre-commit]
+
+- id: actions-pin-sha
+  name: 🔗 GitHub Actions SHA pinning
+  description: Pin uses -> owner/repo@ref to full commit SHAs with full semver comments; falls back to latest semver when needed
+  entry: hooks/github-actions-pin-sha.sh
+  language: script
+  files: '^\.github/workflows/.*\.ya?ml$'
+  stages: [pre-commit]
+  require_serial: true
+
 - id: security-scan
   name: 🛡️ Comprehensive Security Scan
   description: Multi-tool security scanning (secrets, vulnerabilities, IaC)

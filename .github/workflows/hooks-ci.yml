@@ -1,0 +1,322 @@
+name: Pre-commit Hooks CI
+permissions:
+  contents: read
+on:
+  workflow_call:
+    inputs:
+      stage:
+        type: string
+        default: pre-commit
+      fail_on_high_severity:
+        type: boolean
+        default: true
+      fail_on_medium_severity:
+        type: boolean
+        default: false
+      run_security:
+        type: boolean
+        default: true
+      run_file_quality:
+        type: boolean
+        default: true
+      run_python:
+        type: boolean
+        default: true
+      run_javascript:
+        type: boolean
+        default: true
+      run_terraform:
+        type: boolean
+        default: true
+      run_docker:
+        type: boolean
+        default: true
+      run_license:
+        type: boolean
+        default: false
+      run_code_metrics:
+        type: boolean
+        default: false
+      run_performance:
+        type: boolean
+        default: false
+      run_precommit_basic:
+        type: boolean
+        default: true
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  file-quality:
+    if: ${{ inputs.run_file_quality }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 'lts/*'
+      - uses: hashicorp/setup-terraform@633666f66e0061ca3b725c73b2ec20cd13a8fdd1 # v2.0.3
+      - name: Install optional tooling (best-effort)
+        run: |
+          set -e
+          python -m pip install --upgrade pip || true
+          pip install yamllint || true
+          npm i -g prettier eslint typescript license-checker || true
+          # Install shfmt
+          SHFMT_VERSION=3.8.0
+          curl -sSL -o /tmp/shfmt "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64"
+          sudo install -m 0755 /tmp/shfmt /usr/local/bin/shfmt || true
+          # Install actionlint
+          curl -sSL https://github.com/rhysd/actionlint/releases/latest/download/actionlint_Linux_x86_64.tar.gz | sudo tar -xz -C /usr/local/bin actionlint || true
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          fail_on_high_severity: ${{ inputs.fail_on_high_severity }}
+          fail_on_medium_severity: ${{ inputs.fail_on_medium_severity }}
+          run_file_quality: 'true'
+          run_security: 'false'
+          run_python: 'false'
+          run_javascript: 'false'
+          run_terraform: 'false'
+          run_docker: 'false'
+          run_license: 'false'
+          run_code_metrics: 'false'
+          run_performance: 'false'
+          run_precommit_basic: 'false'
+
+  security:
+    if: ${{ inputs.run_security }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 'lts/*'
+      - uses: hashicorp/setup-terraform@633666f66e0061ca3b725c73b2ec20cd13a8fdd1 # v2.0.3
+      - name: Install optional tooling (best-effort)
+        run: |
+          set -e
+          python -m pip install --upgrade pip || true
+          pip install bandit safety semgrep checkov || true
+          npm i -g eslint || true
+          # actionlint and shfmt (used indirectly)
+          SHFMT_VERSION=3.8.0
+          curl -sSL -o /tmp/shfmt "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64"
+          sudo install -m 0755 /tmp/shfmt /usr/local/bin/shfmt || true
+          curl -sSL https://github.com/rhysd/actionlint/releases/latest/download/actionlint_Linux_x86_64.tar.gz | sudo tar -xz -C /usr/local/bin actionlint || true
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          fail_on_high_severity: ${{ inputs.fail_on_high_severity }}
+          fail_on_medium_severity: ${{ inputs.fail_on_medium_severity }}
+          run_file_quality: 'false'
+          run_security: 'true'
+          run_python: 'false'
+          run_javascript: 'false'
+          run_terraform: 'false'
+          run_docker: 'false'
+          run_license: 'false'
+          run_code_metrics: 'false'
+          run_performance: 'false'
+          run_precommit_basic: 'false'
+
+  python:
+    if: ${{ inputs.run_python }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.x'
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip || true
+          pip install black isort flake8 mypy || true
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          run_file_quality: 'false'
+          run_security: 'false'
+          run_python: 'true'
+          run_javascript: 'false'
+          run_terraform: 'false'
+          run_docker: 'false'
+          run_license: 'false'
+          run_code_metrics: 'false'
+          run_performance: 'false'
+          run_precommit_basic: 'false'
+
+  javascript:
+    if: ${{ inputs.run_javascript }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 'lts/*'
+      - name: Install Node tooling
+        run: |
+          npm i -g prettier eslint typescript || true
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          run_file_quality: 'false'
+          run_security: 'false'
+          run_python: 'false'
+          run_javascript: 'true'
+          run_terraform: 'false'
+          run_docker: 'false'
+          run_license: 'false'
+          run_code_metrics: 'false'
+          run_performance: 'false'
+          run_precommit_basic: 'false'
+
+  terraform:
+    if: ${{ inputs.run_terraform }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: hashicorp/setup-terraform@633666f66e0061ca3b725c73b2ec20cd13a8fdd1 # v2.0.3
+      - name: Install Terraform tooling
+        run: |
+          sudo apt-get update -y || true
+          curl -sSL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash || true
+          curl -sSL https://aquasecurity.github.io/tfsec/master/install.sh | bash || true
+          pip install checkov || true
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          run_file_quality: 'false'
+          run_security: 'false'
+          run_python: 'false'
+          run_javascript: 'false'
+          run_terraform: 'true'
+          run_docker: 'false'
+          run_license: 'false'
+          run_code_metrics: 'false'
+          run_performance: 'false'
+          run_precommit_basic: 'false'
+
+  docker:
+    if: ${{ inputs.run_docker }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Install Docker tooling
+        run: |
+          curl -sSL https://raw.githubusercontent.com/hadolint/hadolint/master/install.sh | sudo bash -s -- -b /usr/local/bin
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          run_file_quality: 'false'
+          run_security: 'false'
+          run_python: 'false'
+          run_javascript: 'false'
+          run_terraform: 'false'
+          run_docker: 'true'
+          run_license: 'false'
+          run_code_metrics: 'false'
+          run_performance: 'false'
+          run_precommit_basic: 'false'
+
+  license:
+    if: ${{ inputs.run_license }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 'lts/*'
+      - name: Install license tooling
+        run: |
+          pip install pip-licenses || true
+          npm i -g license-checker || true
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          run_file_quality: 'false'
+          run_security: 'false'
+          run_python: 'false'
+          run_javascript: 'false'
+          run_terraform: 'false'
+          run_docker: 'false'
+          run_license: 'true'
+          run_code_metrics: 'false'
+          run_performance: 'false'
+          run_precommit_basic: 'false'
+
+  code-metrics:
+    if: ${{ inputs.run_code_metrics }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Install metrics tooling
+        run: |
+          sudo apt-get update -y || true
+          sudo apt-get install -y cloc || true
+          pip install radon || true
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          run_file_quality: 'false'
+          run_security: 'false'
+          run_python: 'false'
+          run_javascript: 'false'
+          run_terraform: 'false'
+          run_docker: 'false'
+          run_license: 'false'
+          run_code_metrics: 'true'
+          run_performance: 'false'
+          run_precommit_basic: 'false'
+
+  performance:
+    if: ${{ inputs.run_performance }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Install performance tooling
+        run: |
+          echo "No special tooling required"
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          run_file_quality: 'false'
+          run_security: 'false'
+          run_python: 'false'
+          run_javascript: 'false'
+          run_terraform: 'false'
+          run_docker: 'false'
+          run_license: 'false'
+          run_code_metrics: 'false'
+          run_performance: 'true'
+          run_precommit_basic: 'false'
+
+  precommit-basic:
+    if: ${{ inputs.run_precommit_basic }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: calebsargeant/pre-commit-hooks@feae54b3c14c932f47b8cf94f733720009b7a96d # v1.0.1
+        with:
+          stage: ${{ inputs.stage }}
+          run_file_quality: 'false'
+          run_security: 'false'
+          run_python: 'false'
+          run_javascript: 'false'
+          run_terraform: 'false'
+          run_docker: 'false'
+          run_license: 'false'
+          run_code_metrics: 'false'
+          run_performance: 'false'
+          run_precommit_basic: 'true'
