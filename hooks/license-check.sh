@@ -216,7 +216,7 @@ sys.exit(issues)
         fi
         
         cd "$REPO_ROOT"
-    elif [[ -f "frontend/package.json" ]] || [[ -f "package.json" ]]; then
+    elif [[ -f "frontend/package.json" ]]; then
         echo -e "  ${YELLOW}⚠ license-checker not installed${NC}"
         echo -e "  ${BLUE}Install with: npm install -g license-checker${NC}"
     fi

@@ -65,9 +65,11 @@ run_validation() {
             TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
             
             # Mark critical failures for security and syntax issues
-            if [[ "$script_name" == *"security"* || "$script_name" == *"syntax"* ]]; then
+            case "$script_name" in
+              *security*|*syntax*)
                 CRITICAL_FAILURES=$((CRITICAL_FAILURES + 1))
-            fi
+                ;;
+            esac
         fi
     else
         echo -e "${CYAN}ℹ️  $name validation not available${NC}"

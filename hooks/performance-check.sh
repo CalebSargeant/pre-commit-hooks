@@ -54,6 +54,7 @@ run_perf_test() {
         echo -e "  ${RED}❌ $test_name failed to execute${NC}"
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
     fi
+    return 0
 }
 
 # Python performance tests

@@ -67,6 +67,7 @@ run_security_tool() {
     else
         echo -e "${YELLOW}⚠️  ${tool_name} not available - install with: brew install ${binary}${NC}"
     fi
+    return 0
 }
 
 # Hadolint for Dockerfile best practices

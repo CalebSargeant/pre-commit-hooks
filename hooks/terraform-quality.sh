@@ -75,6 +75,7 @@ run_tf_tool() {
     else
         echo -e "${YELLOW}⚠️  ${tool_name} not available - install with: brew install ${binary}${NC}"
     fi
+    return 0
 }
 
 # Run checks for each directory

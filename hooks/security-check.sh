@@ -69,6 +69,7 @@ run_security_tool() {
     else
         echo -e "${YELLOW}⚠️  ${tool_name} not found - skipping ${description}${NC}"
     fi
+    return 0
 }
 
 # Python security scanning
@@ -181,13 +182,11 @@ if [[ -n "$CONFIG_FILES" ]]; then
     
     # Check for secrets in config files
     echo -e "${BLUE}Checking configuration files for secrets...${NC}"
-    for file in $CONFIG_FILES; do
-        if [[ -f "$file" ]]; then
-            # Check for common secret patterns
-            if grep -E "(password|secret|key|token).*=.*[^#]" "$file" 2>/dev/null | grep -v "example\|placeholder\|xxx" | head -3; then
-                echo -e "  ${RED}⚠ Potential secrets found in $file${NC}"
-                TOTAL_HIGH=$((TOTAL_HIGH + 1))
-            fi
+for file in $CONFIG_FILES; do
+        # Check for common secret patterns
+        if [[ -f "$file" ]] && grep -E "(password|secret|key|token).*=.*[^#]" "$file" 2>/dev/null | grep -v "example\|placeholder\|xxx" | head -3; then
+            echo -e "  ${RED}⚠ Potential secrets found in $file${NC}"
+            TOTAL_HIGH=$((TOTAL_HIGH + 1))
         fi
     done
 fi
@@ -290,9 +289,9 @@ echo "  • Use secrets management tools"
 echo "  • Keep security tools updated"
 
 if [[ $EXIT_CODE -ne 0 ]]; then
-    echo ""
-    echo -e "${RED}Security scan failed - address issues before proceeding${NC}"
-    echo -e "${YELLOW}To bypass: FAIL_ON_HIGH_SEVERITY=false git commit --no-verify${NC}"
+    echo "" >&2
+    echo -e "${RED}Security scan failed - address issues before proceeding${NC}" >&2
+    echo -e "${YELLOW}To bypass: FAIL_ON_HIGH_SEVERITY=false git commit --no-verify${NC}" >&2
 fi
 
 exit $EXIT_CODE
