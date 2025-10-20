@@ -23,7 +23,7 @@ ISSUES_FOUND=0
 
 # Get JS/TS files
 STAGED=$(git diff --cached --name-only)
-if [ -n "$STAGED" ]; then
+if [[ -n "$STAGED" ]]; then
     JS_FILES=$(echo "$STAGED" | grep -E "\.(js|ts|jsx|tsx)$" || true)
     CONTEXT="staged"
 else
@@ -31,7 +31,7 @@ else
     CONTEXT="repository"
 fi
 
-if [ -z "$JS_FILES" ]; then
+if [[ -z "$JS_FILES" ]]; then
     echo -e "${BLUE}No JavaScript/TypeScript files found - skipping JS quality checks${NC}"
     exit 0
 fi
@@ -40,15 +40,15 @@ echo -e "${BLUE}Context: Validating ${CONTEXT} JavaScript/TypeScript files${NC}"
 echo ""
 
 # Check if we're in a Node.js project
-if [ -f "package.json" ] || [ -f "frontend/package.json" ]; then
+if [[ -f "package.json" ]] || [[ -f "frontend/package.json" ]]; then
     FRONTEND=0
-    if [ -f "frontend/package.json" ]; then
+    if [[ -f "frontend/package.json" ]]; then
         FRONTEND=1
     fi
 
     # Prepare file list relative to working dir when running inside frontend
     JS_FILES_LOCAL="$JS_FILES"
-    if [ "$FRONTEND" -eq 1 ]; then
+    if [[ "$FRONTEND" -eq 1 ]]; then
         JS_FILES_LOCAL=$(echo "$JS_FILES" | sed 's#^frontend/##')
     fi
 
@@ -59,14 +59,14 @@ if [ -f "package.json" ] || [ -f "frontend/package.json" ]; then
     elif command -v prettier >/dev/null 2>&1; then
         PRETTIER_CMD="prettier"
     fi
-    if [ -n "$PRETTIER_CMD" ]; then
+    if [[ -n "$PRETTIER_CMD" ]]; then
         echo -e "${BOLD}Running Prettier (formatter)...${NC}"
-        if [ "$FRONTEND" -eq 1 ]; then
+        if [[ "$FRONTEND" -eq 1 ]]; then
             (cd frontend && $PRETTIER_CMD --check $JS_FILES_LOCAL 2>/dev/null)
         else
             $PRETTIER_CMD --check $JS_FILES_LOCAL 2>/dev/null
         fi
-        if [ $? -eq 0 ]; then
+        if [[ $? -eq 0 ]]; then
             echo -e "${GREEN}✓ Prettier formatting passed${NC}"
         else
             echo -e "${YELLOW}⚠ Prettier found formatting issues (auto-fixable)${NC}"
@@ -82,14 +82,14 @@ if [ -f "package.json" ] || [ -f "frontend/package.json" ]; then
     elif command -v eslint >/dev/null 2>&1; then
         ESLINT_CMD="eslint"
     fi
-    if [ -n "$ESLINT_CMD" ]; then
+    if [[ -n "$ESLINT_CMD" ]]; then
         echo -e "${BOLD}Running ESLint (linter)...${NC}"
-        if [ "$FRONTEND" -eq 1 ]; then
+        if [[ "$FRONTEND" -eq 1 ]]; then
             (cd frontend && $ESLINT_CMD $JS_FILES_LOCAL 2>/dev/null)
         else
             $ESLINT_CMD $JS_FILES_LOCAL 2>/dev/null
         fi
-        if [ $? -eq 0 ]; then
+        if [[ $? -eq 0 ]]; then
             echo -e "${GREEN}✓ ESLint linting passed${NC}"
         else
             echo -e "${RED}❌ ESLint found linting issues${NC}"
@@ -106,14 +106,14 @@ if [ -f "package.json" ] || [ -f "frontend/package.json" ]; then
         elif command -v tsc >/dev/null 2>&1; then
             TSC_CMD="tsc"
         fi
-        if [ -n "$TSC_CMD" ]; then
+        if [[ -n "$TSC_CMD" ]]; then
             echo -e "${BOLD}Running TypeScript compiler...${NC}"
-            if [ "$FRONTEND" -eq 1 ]; then
+            if [[ "$FRONTEND" -eq 1 ]]; then
                 (cd frontend && $TSC_CMD --noEmit 2>/dev/null)
             else
                 $TSC_CMD --noEmit 2>/dev/null
             fi
-            if [ $? -eq 0 ]; then
+            if [[ $? -eq 0 ]]; then
                 echo -e "${GREEN}✓ TypeScript compilation passed${NC}"
             else
                 echo -e "${YELLOW}⚠ TypeScript found type issues${NC}"
@@ -132,7 +132,7 @@ echo -e "${BOLD}Running basic syntax checks...${NC}"
 SYNTAX_ISSUES=0
 
 for js_file in $JS_FILES; do
-    if [ -f "$js_file" ]; then
+    if [[ -f "$js_file" ]]; then
         # Basic Node.js syntax check
         if command -v node &> /dev/null; then
             if node --check "$js_file" 2>/dev/null; then
@@ -145,14 +145,14 @@ for js_file in $JS_FILES; do
     fi
 done
 
-if [ $SYNTAX_ISSUES -gt 0 ]; then
+if [[ $SYNTAX_ISSUES -gt 0 ]]; then
     ISSUES_FOUND=$((ISSUES_FOUND + SYNTAX_ISSUES))
 fi
 
 echo ""
 
 # Summary
-if [ $ISSUES_FOUND -eq 0 ]; then
+if [[ $ISSUES_FOUND -eq 0 ]]; then
     echo -e "${GREEN}✅ JavaScript quality gate passed!${NC}"
     exit 0
 else

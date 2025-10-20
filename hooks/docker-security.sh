@@ -25,7 +25,7 @@ SCANS_RUN=0
 
 # Get relevant files
 STAGED=$(git diff --cached --name-only)
-if [ -n "$STAGED" ]; then
+if [[ -n "$STAGED" ]]; then
     DOCKER_FILES=$(echo "$STAGED" | grep -E "(Dockerfile.*|docker-compose.*\.ya?ml|\.dockerignore)" || true)
     CONTEXT="staged"
 else
@@ -33,7 +33,7 @@ else
     CONTEXT="repository"
 fi
 
-if [ -z "$DOCKER_FILES" ]; then
+if [[ -z "$DOCKER_FILES" ]]; then
     echo -e "${BLUE}No Docker files found - skipping container security scan${NC}"
     exit 0
 fi
@@ -58,7 +58,7 @@ run_security_tool() {
             echo -e "  ${GREEN}✓ ${tool_name} scan completed${NC}"
         else
             local exit_code=$?
-            if [ $exit_code -ne 0 ]; then
+            if [[ $exit_code -ne 0 ]]; then
                 echo -e "  ${YELLOW}⚠ ${tool_name} found issues${NC}"
                 ISSUES_FOUND=$((ISSUES_FOUND + 1))
             fi
@@ -87,7 +87,7 @@ if echo "$DOCKER_FILES" | grep -qE "(Dockerfile|docker-compose)"; then
     # If we have built images, scan them too
     if command -v docker &> /dev/null && docker images --format "table {{.Repository}}" | grep -v REPOSITORY | head -1 >/dev/null 2>&1; then
         RECENT_IMAGE=$(docker images --format "table {{.Repository}}:{{.Tag}}" | grep -v REPOSITORY | head -1)
-        if [ -n "$RECENT_IMAGE" ]; then
+        if [[ -n "$RECENT_IMAGE" ]]; then
             run_security_tool "Trivy Image" \
                 "trivy" \
                 "trivy image --severity HIGH,CRITICAL --exit-code 0 $RECENT_IMAGE" \
@@ -102,7 +102,7 @@ if echo "$DOCKER_FILES" | grep -q "docker-compose"; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     for compose_file in $(echo "$DOCKER_FILES" | grep docker-compose); do
-        if [ -f "$compose_file" ]; then
+        if [[ -f "$compose_file" ]]; then
             echo -e "${BLUE}Checking $compose_file...${NC}"
             
             # Check for privileged containers
@@ -129,7 +129,7 @@ if echo "$DOCKER_FILES" | grep -q "docker-compose"; then
                 ISSUES_FOUND=$((ISSUES_FOUND + 1))
             fi
             
-            if [ $ISSUES_FOUND -eq 0 ]; then
+            if [[ $ISSUES_FOUND -eq 0 ]]; then
                 echo -e "  ${GREEN}✓ No security issues found in $compose_file${NC}"
             fi
         fi
@@ -142,10 +142,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BOLD}Docker Security Summary${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ $ISSUES_FOUND -eq 0 ] && [ $SCANS_RUN -gt 0 ]; then
+if [[ $ISSUES_FOUND -eq 0 ]] && [[ $SCANS_RUN -gt 0 ]]; then
     echo -e "${GREEN}✅ All Docker security checks passed!${NC}"
     echo -e "${GREEN}   No container security issues detected.${NC}"
-elif [ $SCANS_RUN -eq 0 ]; then
+elif [[ $SCANS_RUN -eq 0 ]]; then
     echo -e "${YELLOW}⚠️  No security tools available for scanning${NC}"
     echo ""
     echo "Install recommended tools:"
@@ -163,7 +163,7 @@ else
 fi
 
 # Exit with appropriate code
-if [ $ISSUES_FOUND -gt 0 ]; then
+if [[ $ISSUES_FOUND -gt 0 ]]; then
     exit 1
 fi
 

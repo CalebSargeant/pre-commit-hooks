@@ -23,7 +23,7 @@ ISSUES_FOUND=0
 
 # Get Python files
 STAGED=$(git diff --cached --name-only)
-if [ -n "$STAGED" ]; then
+if [[ -n "$STAGED" ]]; then
     PY_FILES=$(echo "$STAGED" | grep "\.py$" || true)
     CONTEXT="staged"
 else
@@ -31,7 +31,7 @@ else
     CONTEXT="repository"
 fi
 
-if [ -z "$PY_FILES" ]; then
+if [[ -z "$PY_FILES" ]]; then
     echo -e "${BLUE}No Python files found - skipping Python quality checks${NC}"
     exit 0
 fi
@@ -88,7 +88,7 @@ if command -v mypy &> /dev/null; then
 fi
 
 # Summary
-if [ $ISSUES_FOUND -eq 0 ]; then
+if [[ $ISSUES_FOUND -eq 0 ]]; then
     echo -e "${GREEN}✅ Python quality gate passed!${NC}"
     exit 0
 else

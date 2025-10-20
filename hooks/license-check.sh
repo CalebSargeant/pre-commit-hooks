@@ -79,7 +79,7 @@ is_license_problematic() {
 echo -e "${BOLD}Project License Check${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ -f "LICENSE" ]; then
+if [[ -f "LICENSE" ]]; then
     echo -e "${GREEN}✓ LICENSE file found${NC}"
     
     # Try to identify the license type
@@ -93,7 +93,7 @@ if [ -f "LICENSE" ]; then
         echo -e "  ${YELLOW}⚠ License type not automatically detected${NC}"
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
     fi
-elif [ -f "LICENSE.txt" ] || [ -f "LICENSE.md" ]; then
+elif [[ -f "LICENSE.txt" ]] || [[ -f "LICENSE.md" ]]; then
     echo -e "${GREEN}✓ License file found${NC}"
 else
     echo -e "${RED}❌ No LICENSE file found${NC}"
@@ -104,7 +104,7 @@ fi
 CHECKS_RUN=$((CHECKS_RUN + 1))
 
 # Python dependencies license check
-if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
+if [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]] || [[ -f "setup.py" ]]; then
     echo -e "${BOLD}Python Dependencies License Check${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -115,7 +115,7 @@ if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ]; th
         # Generate license report
         PYTHON_LICENSES=$(pip-licenses --format=json 2>/dev/null || echo "[]")
         
-        if [ "$PYTHON_LICENSES" != "[]" ]; then
+        if [[ "$PYTHON_LICENSES" != "[]" ]]; then
             echo "$PYTHON_LICENSES" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
@@ -148,7 +148,7 @@ sys.exit(issues)
         echo -e "  ${BLUE}Install with: pip install pip-licenses${NC}"
         
         # Fallback: check requirements.txt for known problematic packages
-        if [ -f "requirements.txt" ]; then
+        if [[ -f "requirements.txt" ]]; then
             echo -e "  ${BLUE}Performing basic requirements.txt scan...${NC}"
             
             # Known packages with GPL licenses
@@ -167,7 +167,7 @@ sys.exit(issues)
 fi
 
 # Node.js dependencies license check
-if [ -f "package.json" ]; then
+if [[ -f "package.json" ]]; then
     echo -e "${BOLD}Node.js Dependencies License Check${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -180,7 +180,7 @@ if [ -f "package.json" ]; then
         # Run license checker
         LICENSE_OUTPUT=$(license-checker --json 2>/dev/null || echo "{}")
         
-        if [ "$LICENSE_OUTPUT" != "{}" ]; then
+        if [[ "$LICENSE_OUTPUT" != "{}" ]]; then
             echo "$LICENSE_OUTPUT" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
@@ -216,7 +216,7 @@ sys.exit(issues)
         fi
         
         cd "$REPO_ROOT"
-    elif [ -f "frontend/package.json" ] || [ -f "package.json" ]; then
+    elif [[ -f "frontend/package.json" ]] || [[ -f "package.json" ]]; then
         echo -e "  ${YELLOW}⚠ license-checker not installed${NC}"
         echo -e "  ${BLUE}Install with: npm install -g license-checker${NC}"
     fi
@@ -225,7 +225,7 @@ sys.exit(issues)
 fi
 
 # Docker base image license check
-if [ -f "Dockerfile" ]; then
+if [[ -f "Dockerfile" ]]; then
     echo -e "${BOLD}Docker Base Image License Check${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -257,7 +257,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 SOURCE_FILES=$(find . -name "*.py" -o -name "*.js" -o -name "*.ts" | grep -v node_modules | grep -v .git | head -10)
 
-if [ -n "$SOURCE_FILES" ]; then
+if [[ -n "$SOURCE_FILES" ]]; then
     FILES_WITH_COPYRIGHT=0
     TOTAL_SOURCE_FILES=0
     
@@ -271,7 +271,7 @@ if [ -n "$SOURCE_FILES" ]; then
     
     COPYRIGHT_PERCENTAGE=$((FILES_WITH_COPYRIGHT * 100 / TOTAL_SOURCE_FILES))
     
-    if [ $COPYRIGHT_PERCENTAGE -lt 10 ]; then
+    if [[ $COPYRIGHT_PERCENTAGE -lt 10 ]]; then
         echo -e "  ${YELLOW}⚠ Only $COPYRIGHT_PERCENTAGE% of source files have copyright notices${NC}"
         echo -e "  ${BLUE}Consider adding copyright headers to important files${NC}"
     else
@@ -289,7 +289,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BOLD}License Compliance Summary${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ $ISSUES_FOUND -eq 0 ]; then
+if [[ $ISSUES_FOUND -eq 0 ]]; then
     echo -e "${GREEN}✅ All $CHECKS_RUN license checks passed!${NC}"
     echo -e "${GREEN}   No license compliance issues detected.${NC}"
 else

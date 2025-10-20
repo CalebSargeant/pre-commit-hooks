@@ -35,7 +35,7 @@ SCAN_ERRORS=()
 
 # Get staged files or all files if not in a git hook context
 STAGED=$(git diff --cached --name-only)
-if [ -n "$STAGED" ]; then
+if [[ -n "$STAGED" ]]; then
     FILES="$STAGED"
     CONTEXT="staged"
 else
@@ -73,7 +73,7 @@ run_security_tool() {
 
 # Python security scanning
 PYTHON_FILES=$(echo "$FILES" | grep "\.py$" || true)
-if [ -n "$PYTHON_FILES" ]; then
+if [[ -n "$PYTHON_FILES" ]]; then
     echo -e "${BOLD}${MAGENTA}Python Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -98,12 +98,12 @@ fi
 
 # JavaScript/TypeScript security scanning
 JS_FILES=$(echo "$FILES" | grep -E "\.(js|ts|jsx|tsx)$" || true)
-if [ -n "$JS_FILES" ]; then
+if [[ -n "$JS_FILES" ]]; then
     echo -e "${BOLD}${MAGENTA}JavaScript/TypeScript Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
 # npm audit for Node.js dependencies
-    if [ -f "package.json" ]; then
+    if [[ -f "package.json" ]]; then
         run_security_tool "npm audit" \
             "npm" \
             "npm audit --audit-level=moderate || true" \
@@ -111,7 +111,7 @@ if [ -n "$JS_FILES" ]; then
     fi
     
     # ESLint with security plugin (only if config exists)
-    if [ -f ".eslintrc.security.js" ]; then
+    if [[ -f ".eslintrc.security.js" ]]; then
         run_security_tool "ESLint Security" \
             "npx" \
             "npx --no-install eslint --ext .js,.ts,.jsx,.tsx . --config .eslintrc.security.js || true" \
@@ -121,7 +121,7 @@ fi
 
 # Infrastructure as Code security
 TERRAFORM_FILES=$(echo "$FILES" | grep -E "\.(tf|hcl)$" || true)
-if [ -n "$TERRAFORM_FILES" ]; then
+if [[ -n "$TERRAFORM_FILES" ]]; then
     echo -e "${BOLD}${MAGENTA}Infrastructure as Code Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -150,7 +150,7 @@ fi
 
 # Container security scanning
 DOCKER_FILES=$(echo "$FILES" | grep -E "(Dockerfile|docker-compose.*\.ya?ml)$" || true)
-if [ -n "$DOCKER_FILES" ] || [ -f "Dockerfile" ] || [ -f "docker-compose.yml" ]; then
+if [[ -n "$DOCKER_FILES" ]] || [[ -f "Dockerfile" ]] || [[ -f "docker-compose.yml" ]]; then
     echo -e "${BOLD}${MAGENTA}Container Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -175,14 +175,14 @@ fi
 
 # Configuration file security
 CONFIG_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml|json|env|config)$" || true)
-if [ -n "$CONFIG_FILES" ]; then
+if [[ -n "$CONFIG_FILES" ]]; then
     echo -e "${BOLD}${MAGENTA}Configuration Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     # Check for secrets in config files
     echo -e "${BLUE}Checking configuration files for secrets...${NC}"
     for file in $CONFIG_FILES; do
-        if [ -f "$file" ]; then
+        if [[ -f "$file" ]]; then
             # Check for common secret patterns
             if grep -E "(password|secret|key|token).*=.*[^#]" "$file" 2>/dev/null | grep -v "example\|placeholder\|xxx" | head -3; then
                 echo -e "  ${RED}⚠ Potential secrets found in $file${NC}"
@@ -199,7 +199,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Check for large files that might contain secrets
 echo -e "${BLUE}Checking for large files...${NC}"
 LARGE_FILES=$(find . -type f -size +1M 2>/dev/null | grep -v ".git" | head -5)
-if [ -n "$LARGE_FILES" ]; then
+if [[ -n "$LARGE_FILES" ]]; then
     echo -e "  ${YELLOW}⚠ Large files found (potential data leaks):${NC}"
     echo "$LARGE_FILES" | sed 's/^/    /'
     TOTAL_MEDIUM=$((TOTAL_MEDIUM + 1))
@@ -217,13 +217,13 @@ echo -e "${BOLD}${MAGENTA}License & Compliance Checks${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Check for license files
-if [ ! -f "LICENSE" ] && [ ! -f "LICENSE.txt" ] && [ ! -f "LICENSE.md" ]; then
+if [[ ! -f "LICENSE" ]] && [[ ! -f "LICENSE.txt" ]] && [[ ! -f "LICENSE.md" ]]; then
     echo -e "  ${YELLOW}⚠ No LICENSE file found${NC}"
     TOTAL_LOW=$((TOTAL_LOW + 1))
 fi
 
 # Check for security policy
-if [ ! -f "SECURITY.md" ] && [ ! -f ".github/SECURITY.md" ]; then
+if [[ ! -f "SECURITY.md" ]] && [[ ! -f ".github/SECURITY.md" ]]; then
     echo -e "  ${YELLOW}⚠ No SECURITY.md file found${NC}"
     TOTAL_LOW=$((TOTAL_LOW + 1))
 fi
@@ -234,7 +234,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BOLD}Security Scan Summary${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ "$SECURITY_TOOLS_FOUND" = "false" ]; then
+if [[ "$SECURITY_TOOLS_FOUND" = "false" ]]; then
     echo -e "${YELLOW}⚠️  Limited security scanning - install more tools for better coverage${NC}"
     echo ""
     echo "Recommended security tools:"
@@ -245,7 +245,7 @@ if [ "$SECURITY_TOOLS_FOUND" = "false" ]; then
 fi
 
 # Display scan errors
-if [ ${#SCAN_ERRORS[@]} -gt 0 ]; then
+if [[ ${#SCAN_ERRORS[@]} -gt 0 ]]; then
     echo -e "${YELLOW}Scan Warnings:${NC}"
     for error in "${SCAN_ERRORS[@]}"; do
         echo -e "  ${YELLOW}⚠ $error${NC}"
@@ -256,27 +256,27 @@ fi
 # Final verdict
 EXIT_CODE=0
 
-if [ $TOTAL_HIGH -gt 0 ]; then
+if [[ $TOTAL_HIGH -gt 0 ]]; then
     echo -e "${RED}❌ Found $TOTAL_HIGH high severity issue(s)${NC}"
     
-    if [ "$FAIL_ON_HIGH_SEVERITY" = "true" ]; then
+    if [[ "$FAIL_ON_HIGH_SEVERITY" = "true" ]]; then
         EXIT_CODE=1
     fi
 fi
 
-if [ $TOTAL_MEDIUM -gt 0 ]; then
+if [[ $TOTAL_MEDIUM -gt 0 ]]; then
     echo -e "${YELLOW}⚠️  Found $TOTAL_MEDIUM medium severity issue(s)${NC}"
     
-    if [ "$FAIL_ON_MEDIUM_SEVERITY" = "true" ]; then
+    if [[ "$FAIL_ON_MEDIUM_SEVERITY" = "true" ]]; then
         EXIT_CODE=1
     fi
 fi
 
-if [ $TOTAL_LOW -gt 0 ]; then
+if [[ $TOTAL_LOW -gt 0 ]]; then
     echo -e "${CYAN}ℹ️  Found $TOTAL_LOW low severity issue(s)${NC}"
 fi
 
-if [ $TOTAL_HIGH -eq 0 ] && [ $TOTAL_MEDIUM -eq 0 ] && [ $TOTAL_LOW -eq 0 ]; then
+if [[ $TOTAL_HIGH -eq 0 ]] && [[ $TOTAL_MEDIUM -eq 0 ]] && [[ $TOTAL_LOW -eq 0 ]]; then
     echo -e "${GREEN}✅ No significant security issues found!${NC}"
     echo -e "${GREEN}   Your code passed security scanning.${NC}"
 fi
@@ -289,7 +289,7 @@ echo "  • Review dependencies regularly"
 echo "  • Use secrets management tools"
 echo "  • Keep security tools updated"
 
-if [ $EXIT_CODE -ne 0 ]; then
+if [[ $EXIT_CODE -ne 0 ]]; then
     echo ""
     echo -e "${RED}Security scan failed - address issues before proceeding${NC}"
     echo -e "${YELLOW}To bypass: FAIL_ON_HIGH_SEVERITY=false git commit --no-verify${NC}"

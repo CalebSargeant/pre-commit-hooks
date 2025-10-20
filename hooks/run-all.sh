@@ -56,7 +56,7 @@ run_validation() {
     echo -e "${BOLD}${BLUE}${name}${NC} - ${description}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
-    if [ -f "$HOOKS_DIR/$script_name" ]; then
+    if [[ -f "$HOOKS_DIR/$script_name" ]]; then
         if bash "$HOOKS_DIR/$script_name"; then
             echo -e "${GREEN}✅ $name passed${NC}"
         else
@@ -78,7 +78,7 @@ run_validation() {
 
 # Detect file types in the current commit/repository context
 STAGED_FILES=$(git diff --cached --name-only)
-if [ -n "$STAGED_FILES" ]; then
+if [[ -n "$STAGED_FILES" ]]; then
     FILES="$STAGED_FILES"
     CONTEXT="staged files"
 else
@@ -99,19 +99,19 @@ HAS_DOCKER=$(echo "$FILES" | grep -qE "(Dockerfile|docker-compose.*\.ya?ml)" && 
 run_validation "🛡️  Security Scan" "both" "security-check.sh" "Comprehensive security scanning"
 
 # Language-specific validations
-if [ "$HAS_PYTHON" = "true" ]; then
+if [[ "$HAS_PYTHON" = "true" ]]; then
     run_validation "🐍 Python Quality" "pre-commit" "python-quality.sh" "Python formatting, linting, and security"
 fi
 
-if [ "$HAS_JAVASCRIPT" = "true" ]; then
+if [[ "$HAS_JAVASCRIPT" = "true" ]]; then
     run_validation "📋 JavaScript Quality" "pre-commit" "javascript-quality.sh" "JavaScript/TypeScript formatting and linting"
 fi
 
-if [ "$HAS_TERRAFORM" = "true" ]; then
+if [[ "$HAS_TERRAFORM" = "true" ]]; then
     run_validation "🏗️  Infrastructure" "pre-commit" "terraform-quality.sh" "Terraform validation and security"
 fi
 
-if [ "$HAS_DOCKER" = "true" ]; then
+if [[ "$HAS_DOCKER" = "true" ]]; then
     run_validation "🐋 Container Security" "pre-commit" "docker-security.sh" "Docker and container validation"
 fi
 
@@ -119,7 +119,7 @@ fi
 run_validation "📁 File Quality" "pre-commit" "file-quality.sh" "General file validation and formatting"
 
 # Pre-push only validations (comprehensive/expensive)
-if [ "$PRE_COMMIT_STAGE" = "pre-push" ]; then
+if [[ "$PRE_COMMIT_STAGE" = "pre-push" ]]; then
     run_validation "⚡ Performance Check" "pre-push" "performance-check.sh" "Performance regression testing"
     run_validation "⚖️  License Compliance" "pre-push" "license-check.sh" "Dependency license validation"
     run_validation "📊 Code Metrics" "pre-push" "code-metrics.sh" "Code quality metrics and analysis"
@@ -130,14 +130,14 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BOLD}Validation Summary${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ $TOTAL_ISSUES -eq 0 ]; then
+if [[ $TOTAL_ISSUES -eq 0 ]]; then
     echo -e "${GREEN}🎉 All $TOTAL_CHECKS validations passed!${NC}"
     echo -e "${GREEN}   Your code meets all quality and security standards.${NC}"
-elif [ $CRITICAL_FAILURES -gt 0 ]; then
+elif [[ $CRITICAL_FAILURES -gt 0 ]]; then
     echo -e "${RED}❌ Found $CRITICAL_FAILURES critical issue(s) out of $TOTAL_CHECKS checks${NC}"
     echo -e "${RED}   Critical security or syntax issues must be resolved.${NC}"
     
-    if [ "$FAIL_ON_HIGH_SEVERITY" = "true" ]; then
+    if [[ "$FAIL_ON_HIGH_SEVERITY" = "true" ]]; then
         echo ""
         echo -e "${RED}Commit blocked due to critical issues.${NC}"
         echo -e "${YELLOW}To bypass: FAIL_ON_HIGH_SEVERITY=false git commit${NC}"
@@ -156,7 +156,7 @@ echo "  • Update tools: pre-commit autoupdate"
 echo "  • Full docs: https://github.com/calebsargeant/infra/tree/main/hooks"
 
 # Exit with appropriate code
-if [ $CRITICAL_FAILURES -gt 0 ] && [ "$FAIL_ON_HIGH_SEVERITY" = "true" ]; then
+if [[ $CRITICAL_FAILURES -gt 0 ]] && [[ "$FAIL_ON_HIGH_SEVERITY" = "true" ]]; then
     exit 1
 else
     exit 0

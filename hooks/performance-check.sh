@@ -57,7 +57,7 @@ run_perf_test() {
 }
 
 # Python performance tests
-if [ -f "backend/lambda_handler.py" ]; then
+if [[ -f "backend/lambda_handler.py" ]]; then
     echo -e "${BOLD}Python Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -75,26 +75,26 @@ if [ -f "backend/lambda_handler.py" ]; then
 fi
 
 # JavaScript/Node.js performance tests
-if [ -f "frontend/package.json" ]; then
+if [[ -f "frontend/package.json" ]]; then
     echo -e "${BOLD}Frontend Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     cd frontend
     
     # Build time test
-    if [ -f "package.json" ] && grep -q "build" package.json; then
+    if [[ -f "package.json" ]] && grep -q "build" package.json; then
         run_perf_test "Frontend build time" \
             "npm run build" \
             "30.0"
     fi
     
     # Bundle size check
-    if [ -d "dist" ] || [ -d "build" ]; then
+    if [[ -d "dist" ]] || [[ -d "build" ]]; then
         BUILD_DIR="dist"
-        [ -d "build" ] && BUILD_DIR="build"
+        [[ -d "build" ]] && BUILD_DIR="build"
         
         BUNDLE_SIZE=$(du -sm $BUILD_DIR 2>/dev/null | cut -f1 || echo "0")
-        if [ "$BUNDLE_SIZE" -gt 10 ]; then
+        if [[ "$BUNDLE_SIZE" -gt 10 ]]; then
             echo -e "  ${YELLOW}⚠ Bundle size is ${BUNDLE_SIZE}MB (consider optimization)${NC}"
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
         else
@@ -107,7 +107,7 @@ if [ -f "frontend/package.json" ]; then
 fi
 
 # Docker build performance
-if [ -f "Dockerfile" ]; then
+if [[ -f "Dockerfile" ]]; then
     echo -e "${BOLD}Container Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -119,7 +119,7 @@ if [ -f "Dockerfile" ]; then
     # Check image size
     if docker images exploitum-test --format "table {{.Size}}" | tail -n1 >/dev/null 2>&1; then
         IMAGE_SIZE=$(docker images exploitum-test --format "table {{.Size}}" | tail -n1 | sed 's/MB//')
-        if [ "${IMAGE_SIZE%.*}" -gt 500 ] 2>/dev/null; then
+        if [[ "${IMAGE_SIZE%.*}" -gt 500 ]] 2>/dev/null; then
             echo -e "  ${YELLOW}⚠ Docker image is ${IMAGE_SIZE} (consider multi-stage build)${NC}"
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
         else
@@ -133,14 +133,14 @@ if [ -f "Dockerfile" ]; then
 fi
 
 # Database/Infrastructure performance
-if [ -d "terraform" ]; then
+if [[ -d "terraform" ]]; then
     echo -e "${BOLD}Infrastructure Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     cd terraform
     
     # Terraform plan time
-    if [ -f "main.tf" ]; then
+    if [[ -f "main.tf" ]]; then
         run_perf_test "Terraform plan time" \
             "terraform plan -out=tfplan" \
             "15.0"
@@ -153,7 +153,7 @@ if [ -d "terraform" ]; then
 fi
 
 # API performance tests (if backend is running)
-if [ -f "backend/lambda_handler.py" ]; then
+if [[ -f "backend/lambda_handler.py" ]]; then
     echo -e "${BOLD}API Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -173,7 +173,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━"
 # Check available memory
 if command -v free >/dev/null 2>&1; then
     AVAILABLE_MEM=$(free -m | awk 'NR==2{printf "%d", $7}')
-    if [ "$AVAILABLE_MEM" -lt 500 ]; then
+    if [[ "$AVAILABLE_MEM" -lt 500 ]]; then
         echo -e "  ${YELLOW}⚠ Low available memory: ${AVAILABLE_MEM}MB${NC}"
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
     else
@@ -183,7 +183,7 @@ elif command -v vm_stat >/dev/null 2>&1; then
     # macOS memory check
     FREE_PAGES=$(vm_stat | grep "Pages free" | awk '{print $3}' | sed 's/\.//')
     FREE_MB=$((FREE_PAGES * 4096 / 1024 / 1024))
-    if [ "$FREE_MB" -lt 500 ]; then
+    if [[ "$FREE_MB" -lt 500 ]]; then
         echo -e "  ${YELLOW}⚠ Low available memory: ${FREE_MB}MB${NC}"
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
     else
@@ -199,7 +199,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BOLD}Performance Test Summary${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ $ISSUES_FOUND -eq 0 ]; then
+if [[ $ISSUES_FOUND -eq 0 ]]; then
     echo -e "${GREEN}✅ All $TESTS_RUN performance tests passed!${NC}"
     echo -e "${GREEN}   No performance regressions detected.${NC}"
     exit 0

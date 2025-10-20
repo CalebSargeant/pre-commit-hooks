@@ -25,7 +25,7 @@ CHECKS_RUN=0
 
 # Get Terraform files
 STAGED=$(git diff --cached --name-only)
-if [ -n "$STAGED" ]; then
+if [[ -n "$STAGED" ]]; then
     TF_FILES=$(echo "$STAGED" | grep -E "\.(tf|hcl)$" | grep -v ".terragrunt-cache" || true)
     CONTEXT="staged"
 else
@@ -33,7 +33,7 @@ else
     CONTEXT="repository"
 fi
 
-if [ -z "$TF_FILES" ]; then
+if [[ -z "$TF_FILES" ]]; then
     echo -e "${BLUE}No Terraform files found - skipping Terraform checks${NC}"
     exit 0
 fi
@@ -64,7 +64,7 @@ run_tf_tool() {
             echo -e "  ${GREEN}✓ ${tool_name} passed${NC}"
         else
             local exit_code=$?
-            if [ $exit_code -ne 0 ]; then
+            if [[ $exit_code -ne 0 ]]; then
                 echo -e "  ${YELLOW}⚠ ${tool_name} found issues${NC}"
                 ISSUES_FOUND=$((ISSUES_FOUND + 1))
             fi
@@ -90,7 +90,7 @@ for dir in $TF_DIRS; do
         "$dir"
     
     # 2. Terraform Validate (only if .terraform exists or we can init)
-    if [ -d "$dir/.terraform" ] || terraform -chdir="$dir" init -backend=false >/dev/null 2>&1; then
+    if [[ -d "$dir/.terraform" ]] || terraform -chdir="$dir" init -backend=false >/dev/null 2>&1; then
         run_tf_tool "terraform validate" \
             "terraform" \
             "terraform validate" \
@@ -122,7 +122,7 @@ for dir in $TF_DIRS; do
         "$dir"
     
     # 6. Terraform Docs (if README exists or we should create docs)
-    if [ -f "$dir/README.md" ] || ls "$dir"/*.tf >/dev/null 2>&1; then
+    if [[ -f "$dir/README.md" ]] || ls "$dir"/*.tf >/dev/null 2>&1; then
         run_tf_tool "terraform-docs" \
             "terraform-docs" \
             "terraform-docs markdown table --output-file README.md ." \
@@ -144,7 +144,7 @@ CHECKS_RUN=$((CHECKS_RUN + 1))
 ANTIPATTERN_ISSUES=0
 
 for tf_file in $TF_FILES; do
-    if [ -f "$tf_file" ]; then
+    if [[ -f "$tf_file" ]]; then
         # Check for hardcoded values
         if grep -qE "(password|secret|key)\s*=\s*\"[^$]" "$tf_file" 2>/dev/null; then
             echo -e "  ${RED}⚠ Potential hardcoded secrets in $tf_file${NC}"
@@ -165,7 +165,7 @@ for tf_file in $TF_FILES; do
     fi
 done
 
-if [ $ANTIPATTERN_ISSUES -eq 0 ]; then
+if [[ $ANTIPATTERN_ISSUES -eq 0 ]]; then
     echo -e "  ${GREEN}✓ No anti-patterns detected${NC}"
 else
     ISSUES_FOUND=$((ISSUES_FOUND + ANTIPATTERN_ISSUES))
@@ -175,12 +175,12 @@ echo ""
 
 # Check for Terragrunt files
 HCL_FILES=$(echo "$TF_FILES" | grep "\.hcl$" || true)
-if [ -n "$HCL_FILES" ]; then
+if [[ -n "$HCL_FILES" ]]; then
     echo -e "${BOLD}Terragrunt Checks${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━"
     
     for hcl_file in $HCL_FILES; do
-        if [ -f "$hcl_file" ]; then
+        if [[ -f "$hcl_file" ]]; then
             echo -e "${BLUE}Checking $hcl_file...${NC}"
             
             # Basic HCL syntax check
@@ -204,10 +204,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BOLD}Terraform Validation Summary${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ $ISSUES_FOUND -eq 0 ] && [ $CHECKS_RUN -gt 0 ]; then
+if [[ $ISSUES_FOUND -eq 0 ]] && [[ $CHECKS_RUN -gt 0 ]]; then
     echo -e "${GREEN}✅ All Terraform checks passed!${NC}"
     echo -e "${GREEN}   Infrastructure code is validated and secure.${NC}"
-elif [ $CHECKS_RUN -eq 0 ]; then
+elif [[ $CHECKS_RUN -eq 0 ]]; then
     echo -e "${YELLOW}⚠️  No Terraform tools available for validation${NC}"
     echo ""
     echo "Install recommended tools:"
@@ -229,7 +229,7 @@ else
 fi
 
 # Exit with appropriate code
-if [ $ISSUES_FOUND -gt 0 ]; then
+if [[ $ISSUES_FOUND -gt 0 ]]; then
     exit 1
 fi
 
