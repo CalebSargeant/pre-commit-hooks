@@ -25,6 +25,7 @@ repos:
     rev: main
     hooks:
       - id: file-quality           # fast hygiene (whitespace, CRLF/BOM, YAML/JSON)
+      - id: actions-pin-sha        # pin Actions to SHAs with full semver comments
       - id: python-quality         # black/isort/flake8/mypy (if installed)
       - id: javascript-quality     # prettier/eslint/tsc (if installed)
       - id: terraform-quality      # fmt/validate/tflint/tfsec/checkov/terraform-docs
@@ -43,6 +44,7 @@ pre-commit run -a
 ## Available hooks
 - all: Orchestrates everything. Stage-aware. Runs security, language checks, Docker/IaC, and (on pre-push) metrics, performance, licenses.
 - file-quality: Branch protection (no commits to main/master), trailing whitespace, large files, CRLF/BOM, YAML/JSON validity, shebangs for executables.
+- actions-pin-sha: Pin GitHub Actions `uses:` to full SHAs and annotate with full semver (e.g., `# v5.0.0`); if ref cannot be resolved (e.g., `v4`), falls back to latest `v4.x.y` or latest release.
 - python-quality: black, isort, flake8, optional mypy.
 - javascript-quality: prettier, eslint, optional tsc; supports monorepo `frontend/`.
 - terraform-quality: fmt, validate, tflint, tfsec, checkov, terraform-docs (per-directory).
@@ -55,6 +57,9 @@ pre-commit run -a
 - FAIL_ON_HIGH_SEVERITY=true|false (default true): security-scan/run-all will fail on high issues.
 - FAIL_ON_MEDIUM_SEVERITY=true|false (default false): optionally fail on medium issues.
 - PRE_COMMIT_STAGE is auto-detected by run-all (pre-commit vs pre-push).
+- Actions pinning:
+  - PIN_SHA_VERBOSE=0|1|2 (default 1)
+  - PIN_SHA_DRY_RUN=0|1 (default 0)
 
 ## Tooling auto-detection
 Hooks only run tools that are already available in your environment. Recommended installs:

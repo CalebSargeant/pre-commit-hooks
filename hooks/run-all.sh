@@ -128,6 +128,9 @@ fi
 # General file validations
 run_validation "📁 File Quality" "$STAGE_PRE_COMMIT" "file-quality.sh" "General file validation and formatting"
 
+# Pre-push Actions pinning to avoid failing the commit when files are auto-fixed
+run_validation "🔗 Actions SHA pinning" "$STAGE_PRE_PUSH" "github-actions-pin-sha.sh" "Pin GitHub Actions to SHAs with semver comments"
+
 # Pre-push only validations (comprehensive/expensive)
 if [[ "$PRE_COMMIT_STAGE" = "$STAGE_PRE_PUSH" ]]; then
     run_validation "⚡ Performance Check" "$STAGE_PRE_PUSH" "performance-check.sh" "Performance regression testing"
