@@ -245,11 +245,11 @@ fi
 
 # Display scan errors
 if [[ ${#SCAN_ERRORS[@]} -gt 0 ]]; then
-    echo -e "${YELLOW}Scan Warnings:${NC}"
+    echo -e "${YELLOW}Scan Warnings:${NC}" >&2
     for error in "${SCAN_ERRORS[@]}"; do
-        echo -e "  ${YELLOW}⚠ $error${NC}"
+        echo -e "  ${YELLOW}⚠ $error${NC}" >&2
     done
-    echo ""
+    echo "" >&2
 fi
 
 # Final verdict

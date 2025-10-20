@@ -235,17 +235,22 @@ if [[ -f "Dockerfile" ]]; then
     
     for image in $BASE_IMAGES; do
         # Common images with known licenses
-        if [[ "$image" == *"alpine"* ]]; then
-            echo -e "  ${GREEN}✓ $image: MIT-style (Alpine Linux)${NC}"
-        elif [[ "$image" == *"ubuntu"* ]] || [[ "$image" == *"debian"* ]]; then
-            echo -e "  ${GREEN}✓ $image: Multiple compatible licenses${NC}"
-        elif [[ "$image" == *"centos"* ]] || [[ "$image" == *"rhel"* ]]; then
-            echo -e "  ${YELLOW}⚠ $image: Review Red Hat licensing terms${NC}"
-            ISSUES_FOUND=$((ISSUES_FOUND + 1))
-        else
-            echo -e "  ${YELLOW}⚠ $image: License unknown - manual review needed${NC}"
-            ISSUES_FOUND=$((ISSUES_FOUND + 1))
-        fi
+        case "$image" in
+            *alpine*)
+                echo -e "  ${GREEN}✓ $image: MIT-style (Alpine Linux)${NC}"
+                ;;
+            *ubuntu*|*debian*)
+                echo -e "  ${GREEN}✓ $image: Multiple compatible licenses${NC}"
+                ;;
+            *centos*|*rhel*)
+                echo -e "  ${YELLOW}⚠ $image: Review Red Hat licensing terms${NC}"
+                ISSUES_FOUND=$((ISSUES_FOUND + 1))
+                ;;
+            *)
+                echo -e "  ${YELLOW}⚠ $image: License unknown - manual review needed${NC}"
+                ISSUES_FOUND=$((ISSUES_FOUND + 1))
+                ;;
+        esac
     done
     
     CHECKS_RUN=$((CHECKS_RUN + 1))
