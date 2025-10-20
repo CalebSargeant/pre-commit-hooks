@@ -1,13 +1,11 @@
 name: Run Pre-commit Hooks
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 jobs:
   precommit:
-    uses: calebsargeant/reusable-workflows/.github/workflows/hooks-ci.yml@latest
+    uses: calebsargeant/reusable-workflows/.github/workflows/hooks-ci.yml@6484b8a3f28aef6714141c6c1ff5cc3fa38ab9cf # v1.0.1
     with:
       stage: pre-commit
       fail_on_high_severity: true
