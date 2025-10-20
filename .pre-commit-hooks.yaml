@@ -1,0 +1,85 @@
+# Pre-commit Hooks Configuration
+# This defines comprehensive hooks that can be referenced by any repository
+
+# The ultimate "all" hook that orchestrates everything
+- id: all
+  name: 🚀 Complete Code Quality & Security Pipeline
+  description: Comprehensive validation including security, quality, performance, and compliance
+  entry: hooks/run-all.sh
+  language: script
+  types: [file]
+  stages: [pre-commit, pre-push]
+  verbose: true
+  require_serial: true
+  always_run: true
+
+# Individual component hooks for granular control
+- id: file-quality
+  name: 📁 File Quality
+  description: Generic file hygiene checks (branch protection, whitespace, CRLF/BOM, YAML/JSON)
+  entry: hooks/file-quality.sh
+  language: script
+  types: [text]
+  stages: [pre-commit]
+- id: security-scan
+  name: 🛡️ Comprehensive Security Scan
+  description: Multi-tool security scanning (secrets, vulnerabilities, IaC)
+  entry: hooks/security-check.sh
+  language: script
+  files: '\\.(py|js|ts|tf|hcl|yaml|yml|json|sh|env)$'
+  stages: [pre-push]
+  verbose: true
+  require_serial: true
+
+- id: python-quality
+  name: 🐍 Python Quality Gate
+  description: Complete Python quality validation
+  entry: hooks/python-quality.sh
+  language: script
+  files: '\\.py$'
+  stages: [pre-commit]
+  require_serial: true
+
+- id: javascript-quality
+  name: 📋 JavaScript Quality Gate
+  description: Complete JavaScript/TypeScript quality validation
+  entry: hooks/javascript-quality.sh
+  language: script
+  files: '\\.(js|ts|jsx|tsx)$'
+  stages: [pre-commit]
+  require_serial: true
+
+- id: terraform-quality
+  name: 🏗️ Terraform Comprehensive Check
+  description: Complete Terraform validation pipeline
+  entry: hooks/terraform-quality.sh
+  language: script
+  files: '\\.(tf|hcl)$'
+  stages: [pre-commit]
+  require_serial: true
+
+- id: docker-security
+  name: 🐋 Docker Security Scan
+  description: Container security validation with Trivy and Hadolint
+  entry: hooks/docker-security.sh
+  language: script
+  files: '^(Dockerfile.*|docker-compose.*\.ya?ml|\.dockerignore)$'
+  stages: [pre-commit]
+
+- id: performance-check
+  name: ⚡ Performance Regression Test
+  description: Lightweight performance checks to catch regressions
+  entry: hooks/performance-check.sh
+  language: script
+  stages: [pre-push]
+  always_run: true
+  require_serial: true
+
+- id: license-compliance
+  name: ⚖️ License Compliance Check
+  description: Dependency license compliance validation
+  entry: hooks/license-check.sh
+  language: script
+  always_run: true
+  stages: [pre-push]
+  require_serial: true
