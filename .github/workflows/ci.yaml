@@ -7,18 +7,9 @@ on:
 
 jobs:
   precommit:
-    uses: calebsargeant/reusable-workflows/.github/workflows/hooks-ci.yml@fbf4def55e74dc53f200becf70e2f2b66a76f0a7 # v1.0.0
+    uses: calebsargeant/reusable-workflows/.github/workflows/hooks-ci.yml@latest
     with:
       stage: pre-commit
       fail_on_high_severity: true
       fail_on_medium_severity: false
-      run_security: true
-      run_file_quality: true
-      run_python: true
-      run_javascript: true
-      run_terraform: false
-      run_docker: true
-      run_license: false
-      run_code_metrics: false
-      run_performance: false
-      run_precommit_basic: false
+      run_all: true
