@@ -17,7 +17,6 @@ BOLD='\033[1m'
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   REPO_ROOT=$(git rev-parse --show-toplevel)
   cd "$REPO_ROOT"
-  export PATH="$REPO_ROOT/bin:$PATH"
 fi
 
 echo -e "${BOLD}${BLUE}🔒 Merge Gate Checks (syntax & critical validation)${NC}"

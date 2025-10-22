@@ -32,12 +32,35 @@ jobs:
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2.1.0
 
-      - name: Restore tools cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - name: Setup actionlint
+        uses: yokawasa/action-actionlint@v1
+
+      - name: Setup tfsec
+        uses: aquasecurity/setup-tfsec@v1
+
+      - name: Setup trivy
+        uses: aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1 # v0.2.4
+
+      - name: Setup gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         with:
-          path: bin
-          key: merge-gate-tools-${{ runner.os }}-v1
-          restore-keys: merge-gate-tools-${{ runner.os }}
+          source: '.'
+          args: '--no-banner --redact'
+        continue-on-error: true
+
+      - name: Setup kubeconform
+        run: |
+          set -Eeuo pipefail
+          KCF_VERSION=$(curl -sSL https://api.github.com/repos/yannh/kubeconform/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          curl -sSL -o kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/v${KCF_VERSION}/kubeconform-linux-amd64.tar.gz"
+          tar -xzf kubeconform.tar.gz
+          sudo mv kubeconform /usr/local/bin/
+          rm -f kubeconform.tar.gz
+
+      - name: Setup yamllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint
 
       - name: Restore python cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -45,64 +68,6 @@ jobs:
           path: .venv
           key: merge-gate-venv-${{ runner.os }}-${{ hashFiles('**/requirements.txt', '.python-version') }}-v1
           restore-keys: merge-gate-venv-${{ runner.os }}
-
-      - name: Install tools (parallel)
-        run: |
-          set -Eeuo pipefail
-          mkdir -p bin
-          export BIN="$PWD/bin"
-
-          # Check if tools already cached
-          if [[ -f "$BIN/actionlint" && -f "$BIN/gitleaks" && -f "$BIN/kubeconform" && -f "$BIN/tfsec" && -f "$BIN/trivy" ]]; then
-            echo "Tools already cached, skipping downloads"
-          else
-            # Start all downloads in background
-            echo "Downloading actionlint..."
-            (
-              curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download/actionlint.bash | bash -s -- -b "$BIN"
-            ) &
-
-            echo "Downloading gitleaks..."
-            (
-              GL_VERSION=$(curl -sSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-              curl -sSL -o "$BIN/gitleaks.tar.gz" "https://github.com/gitleaks/gitleaks/releases/download/v${GL_VERSION}/gitleaks_${GL_VERSION}_linux_x64.tar.gz"
-              tar -C "$BIN" -xzf "$BIN/gitleaks.tar.gz" gitleaks
-              rm -f "$BIN/gitleaks.tar.gz"
-            ) &
-
-            echo "Downloading kubeconform..."
-            (
-              KCF_VERSION=$(curl -sSL https://api.github.com/repos/yannh/kubeconform/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-              curl -sSL -o "$BIN/kubeconform.tar.gz" "https://github.com/yannh/kubeconform/releases/download/v${KCF_VERSION}/kubeconform-linux-amd64.tar.gz"
-              tar -C "$BIN" -xzf "$BIN/kubeconform.tar.gz" kubeconform
-              rm -f "$BIN/kubeconform.tar.gz"
-            ) &
-
-            echo "Downloading tfsec..."
-            (
-              TFSEC_VERSION=$(curl -sSL https://api.github.com/repos/aquasecurity/tfsec/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-              curl -sSL -o "$BIN/tfsec" https://github.com/aquasecurity/tfsec/releases/download/v${TFSEC_VERSION}/tfsec-linux-amd64
-              chmod +x "$BIN/tfsec"
-            ) &
-
-            echo "Downloading trivy..."
-            (
-              TV=$(curl -sSL https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-              curl -sSfL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TV}/trivy_${TV}_Linux-64bit.tar.gz"
-              tar -xzf trivy.tar.gz trivy
-              mv trivy "$BIN/"
-              rm -f trivy.tar.gz
-            ) &
-
-            wait
-          fi
-
-          # APT installs (serial, requires lock)
-          echo "Installing yamllint..."
-          sudo apt-get update
-          sudo apt-get install -y yamllint python3-pip
-
-          echo "$BIN" >> "$GITHUB_PATH"
 
       - name: Setup python venv
         run: |
@@ -120,5 +85,5 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
-          PATH: ${{ github.workspace }}/bin:${{ github.workspace }}/.venv/bin:${{ env.PATH }}
+          PATH: ${{ github.workspace }}/.venv/bin:${{ env.PATH }}
         run: hooks/ci-merge-gate.sh
