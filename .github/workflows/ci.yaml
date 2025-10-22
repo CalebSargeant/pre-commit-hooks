@@ -7,7 +7,7 @@ on:
 
 jobs:
   precommit:
-    uses: calebsargeant/reusable-workflows/.github/workflows/hooks-ci.yml@6484b8a3f28aef6714141c6c1ff5cc3fa38ab9cf # v1.0.1
+    uses: calebsargeant/reusable-workflows/.github/workflows/hooks-ci.yml@1a02100deff6fe75e42a5ab0b62ada6a58820495 # v1.0.2
     with:
       stage: pre-commit
       fail_on_high_severity: true
