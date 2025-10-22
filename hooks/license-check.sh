@@ -52,26 +52,26 @@ PROBLEMATIC_LICENSES=(
 # Function to check if license is acceptable
 is_license_acceptable() {
     local license=$1
-    
+
     for acceptable in "${ACCEPTABLE_LICENSES[@]}"; do
         if [[ "$license" == *"$acceptable"* ]]; then
             return 0
         fi
     done
-    
+
     return 1
 }
 
 # Function to check if license is problematic
 is_license_problematic() {
     local license=$1
-    
+
     for problematic in "${PROBLEMATIC_LICENSES[@]}"; do
         if [[ "$license" == *"$problematic"* ]]; then
             return 0
         fi
     done
-    
+
     return 1
 }
 
@@ -81,7 +81,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [[ -f "LICENSE" ]]; then
     echo -e "${GREEN}✓ LICENSE file found${NC}"
-    
+
     # Try to identify the license type
     if grep -i "MIT License" LICENSE >/dev/null 2>&1; then
         echo -e "  ${BLUE}License type: MIT${NC}"
@@ -107,14 +107,14 @@ CHECKS_RUN=$((CHECKS_RUN + 1))
 if [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]] || [[ -f "setup.py" ]]; then
     echo -e "${BOLD}Python Dependencies License Check${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     # Check if pip-licenses is available
     if command -v pip-licenses >/dev/null 2>&1; then
         echo -e "${BLUE}Checking Python package licenses...${NC}"
-        
+
         # Generate license report
         PYTHON_LICENSES=$(pip-licenses --format=json 2>/dev/null || echo "[]")
-        
+
         if [[ "$PYTHON_LICENSES" != "[]" ]]; then
             echo "$PYTHON_LICENSES" | python3 -c "
 import sys, json
@@ -123,7 +123,7 @@ issues = 0
 for pkg in data:
     license = pkg.get('License', 'Unknown')
     name = pkg.get('Name', 'Unknown')
-    
+
     if 'GPL' in license or 'AGPL' in license:
         print(f'  ❌ {name}: {license} (potentially problematic)')
         issues += 1
@@ -138,7 +138,7 @@ for pkg in data:
 
 sys.exit(issues)
 " && python_license_issues=0 || python_license_issues=$?
-        
+
             ISSUES_FOUND=$((ISSUES_FOUND + python_license_issues))
         else
             echo -e "  ${YELLOW}⚠ No Python packages found or pip-licenses failed${NC}"
@@ -146,14 +146,14 @@ sys.exit(issues)
     else
         echo -e "  ${YELLOW}⚠ pip-licenses not installed${NC}"
         echo -e "  ${BLUE}Install with: pip install pip-licenses${NC}"
-        
+
         # Fallback: check requirements.txt for known problematic packages
         if [[ -f "requirements.txt" ]]; then
             echo -e "  ${BLUE}Performing basic requirements.txt scan...${NC}"
-            
+
             # Known packages with GPL licenses
             GPL_PACKAGES=("mysql-python" "PyQt5" "PyQt6" "GPL")
-            
+
             for pkg in "${GPL_PACKAGES[@]}"; do
                 if grep -i "$pkg" requirements.txt >/dev/null 2>&1; then
                     echo -e "    ${RED}❌ Found potentially problematic package: $pkg${NC}"
@@ -162,7 +162,7 @@ sys.exit(issues)
             done
         fi
     fi
-    
+
     CHECKS_RUN=$((CHECKS_RUN + 1))
 fi
 
@@ -170,16 +170,16 @@ fi
 if [[ -f "package.json" ]]; then
     echo -e "${BOLD}Node.js Dependencies License Check${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     # Check if license-checker is available
     if command -v license-checker >/dev/null 2>&1; then
         echo -e "${BLUE}Checking Node.js package licenses...${NC}"
-        
+
         cd frontend 2>/dev/null || true
-        
+
         # Run license checker
         LICENSE_OUTPUT=$(license-checker --json 2>/dev/null || echo "{}")
-        
+
         if [[ "$LICENSE_OUTPUT" != "{}" ]]; then
             echo "$LICENSE_OUTPUT" | python3 -c "
 import sys, json
@@ -188,14 +188,14 @@ issues = 0
 
 for pkg_name, pkg_info in data.items():
     licenses = pkg_info.get('licenses', 'Unknown')
-    
+
     if isinstance(licenses, list):
         license_str = ', '.join(licenses)
     else:
         license_str = licenses
-    
+
     pkg_name_clean = pkg_name.split('@')[0]
-    
+
     if any(problematic in license_str for problematic in ['GPL', 'AGPL', 'LGPL']):
         print(f'  ❌ {pkg_name_clean}: {license_str} (potentially problematic)')
         issues += 1
@@ -209,18 +209,18 @@ for pkg_name, pkg_info in data.items():
 
 sys.exit(issues)
 " && node_license_issues=0 || node_license_issues=$?
-        
+
             ISSUES_FOUND=$((ISSUES_FOUND + node_license_issues))
         else
             echo -e "  ${YELLOW}⚠ No Node.js packages found or license-checker failed${NC}"
         fi
-        
+
         cd "$REPO_ROOT"
     elif [[ -f "frontend/package.json" ]]; then
         echo -e "  ${YELLOW}⚠ license-checker not installed${NC}"
         echo -e "  ${BLUE}Install with: npm install -g license-checker${NC}"
     fi
-    
+
     CHECKS_RUN=$((CHECKS_RUN + 1))
 fi
 
@@ -228,11 +228,11 @@ fi
 if [[ -f "Dockerfile" ]]; then
     echo -e "${BOLD}Docker Base Image License Check${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     echo -e "${BLUE}Checking Docker base images...${NC}"
-    
+
     BASE_IMAGES=$(grep -i "^FROM " Dockerfile | awk '{print $2}' | head -5)
-    
+
     for image in $BASE_IMAGES; do
         # Common images with known licenses
         case "$image" in
@@ -252,7 +252,7 @@ if [[ -f "Dockerfile" ]]; then
                 ;;
         esac
     done
-    
+
     CHECKS_RUN=$((CHECKS_RUN + 1))
 fi
 
@@ -265,17 +265,17 @@ SOURCE_FILES=$(find . -name "*.py" -o -name "*.js" -o -name "*.ts" | grep -v nod
 if [[ -n "$SOURCE_FILES" ]]; then
     FILES_WITH_COPYRIGHT=0
     TOTAL_SOURCE_FILES=0
-    
+
     for file in $SOURCE_FILES; do
         TOTAL_SOURCE_FILES=$((TOTAL_SOURCE_FILES + 1))
-        
+
         if grep -i "copyright\|©\|(c)" "$file" >/dev/null 2>&1; then
             FILES_WITH_COPYRIGHT=$((FILES_WITH_COPYRIGHT + 1))
         fi
     done
-    
+
     COPYRIGHT_PERCENTAGE=$((FILES_WITH_COPYRIGHT * 100 / TOTAL_SOURCE_FILES))
-    
+
     if [[ $COPYRIGHT_PERCENTAGE -lt 10 ]]; then
         echo -e "  ${YELLOW}⚠ Only $COPYRIGHT_PERCENTAGE% of source files have copyright notices${NC}"
         echo -e "  ${BLUE}Consider adding copyright headers to important files${NC}"
