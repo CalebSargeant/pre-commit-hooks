@@ -11,10 +11,14 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# Autofix behavior
+HOOKS_AUTOFIX=${HOOKS_AUTOFIX:-1}   # 1=auto-fix trailing whitespace / YAML when possible
+
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT"
 
 ISSUES_FOUND=0
+FIXED_COUNT=0
 
 echo -e "${BLUE}File Quality Validation${NC}"
 
@@ -36,14 +40,34 @@ if [[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
 
+# Helpers
+is_text_file() { grep -Iq . "$1" 2>/dev/null; }
+
 # ----------------------------------------------------------------------
-# ✂️ Check for trailing whitespace
+# ✂️ Check for trailing whitespace (and optionally auto-fix)
 # ----------------------------------------------------------------------
-TW_FILES=$(echo "$FILES" | xargs -n1 -I{} grep -l "[[:space:]]$" "{}" 2>/dev/null | head -5 || true)
+TW_FILES=$(echo "$FILES" | xargs -n1 -I{} grep -l "[[:space:]]$" "{}" 2>/dev/null | head -50 || true)
 if [[ -n "$TW_FILES" ]]; then
     echo -e "${YELLOW}⚠ Files with trailing whitespace found${NC}"
     echo "$TW_FILES"
-    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+    if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+        TW_FIXED=0
+        while IFS= read -r f; do
+            [[ -f "$f" ]] || continue
+            is_text_file "$f" || continue
+            # Remove trailing spaces/tabs
+            perl -0777 -pe 's/[ \t]+$//mg' -i -- "$f" 2>/dev/null || true
+            git add -- "$f" 2>/dev/null || true
+            TW_FIXED=$((TW_FIXED + 1))
+        done <<<"$TW_FILES"
+        if (( TW_FIXED > 0 )); then
+            echo -e "${GREEN}✓ Auto-fixed trailing whitespace in ${TW_FIXED} file(s)${NC}"
+            FIXED_COUNT=$((FIXED_COUNT + TW_FIXED))
+            # Recompute to see if anything remains
+            TW_FILES=$(echo "$FILES" | xargs -n1 -I{} grep -l "[[:space:]]$" "{}" 2>/dev/null | head -50 || true)
+        fi
+    fi
+    [[ -n "$TW_FILES" ]] && ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
 
 # ----------------------------------------------------------------------
@@ -57,12 +81,33 @@ if [[ -n "$LARGE_FILES" ]]; then
 fi
 
 # ----------------------------------------------------------------------
-# 🧾 YAML validation
+# 🧾 YAML validation (and optionally auto-format)
 # ----------------------------------------------------------------------
 YAML_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml)$" || true)
-if [[ -n "$YAML_FILES" ]] && command -v yamllint >/dev/null 2>&1 && \
-   ! echo "$YAML_FILES" | xargs -n1 yamllint -d '{extends: relaxed, rules: {line-length: {max: 120}}}' >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠ YAML formatting issues found${NC}"
+YAML_LINT_FAIL=0
+if [[ -n "$YAML_FILES" ]] && command -v yamllint >/dev/null 2>&1; then
+    if ! echo "$YAML_FILES" | xargs -n1 yamllint -d '{extends: relaxed, rules: {line-length: {max: 120}}}' >/dev/null 2>&1; then
+        YAML_LINT_FAIL=1
+        echo -e "${YELLOW}⚠ YAML formatting issues found${NC}"
+        if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+            # Prefer prettier if available
+            if npx --no-install prettier --version >/dev/null 2>&1; then
+                npx --no-install prettier --write "$YAML_FILES" >/dev/null 2>&1 || true
+                git add -- "$YAML_FILES" 2>/dev/null || true
+                echo -e "${GREEN}✓ Auto-formatted YAML with Prettier${NC}"
+            elif command -v prettier >/dev/null 2>&1; then
+                prettier --write "$YAML_FILES" >/dev/null 2>&1 || true
+                git add -- "$YAML_FILES" 2>/dev/null || true
+                echo -e "${GREEN}✓ Auto-formatted YAML with Prettier${NC}"
+            fi
+            # Re-run lint to confirm
+            if echo "$YAML_FILES" | xargs -n1 yamllint -d '{extends: relaxed, rules: {line-length: {max: 120}}}' >/dev/null 2>&1; then
+                YAML_LINT_FAIL=0
+            fi
+        fi
+    fi
+fi
+if (( YAML_LINT_FAIL )); then
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
 
@@ -96,7 +141,7 @@ fi
 # ----------------------------------------------------------------------
 WF_FILES=$(echo "$FILES" | grep -E '^\.github/workflows/.*\.ya?ml$' || true)
 if [[ -n "$WF_FILES" || -d ".github/workflows" ]] && command -v actionlint >/dev/null 2>&1 && \
-   ! actionlint -color -shellcheck= 2>&1 >/dev/null; then
+   ! actionlint -color -shellcheck= >/dev/null 2>&1; then
     echo -e "${YELLOW}⚠ actionlint found issues in workflow files${NC}"
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
@@ -151,7 +196,11 @@ fi
 # ✅ Summary
 # ----------------------------------------------------------------------
 if [[ $ISSUES_FOUND -eq 0 ]]; then
-    echo -e "${GREEN}✅ File quality checks passed${NC}"
+    if (( FIXED_COUNT > 0 )); then
+        echo -e "${GREEN}✅ File quality issues auto-fixed (${FIXED_COUNT} change(s))${NC}"
+    else
+        echo -e "${GREEN}✅ File quality checks passed${NC}"
+    fi
     exit 0
 else
     echo -e "${YELLOW}Found $ISSUES_FOUND file quality issue(s)${NC}"

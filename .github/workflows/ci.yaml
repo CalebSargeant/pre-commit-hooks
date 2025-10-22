@@ -1,15 +1,80 @@
-name: Run Pre-commit Hooks
+name: Merge Gate CI
 permissions:
   contents: read
+  pull-requests: read
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
-  precommit:
-    uses: calebsargeant/reusable-workflows/.github/workflows/hooks-ci.yml@1a02100deff6fe75e42a5ab0b62ada6a58820495 # v1.0.2
-    with:
-      stage: pre-commit
-      fail_on_high_severity: true
-      fail_on_medium_severity: false
-      run_all: true
+  merge-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (apt)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint jq curl ca-certificates gnupg lsb-release
+
+      - name: Install actionlint
+        run: |
+          mkdir -p ./bin
+          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download/actionlint.bash | bash -s -- -b ./bin
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+
+      - name: Install gitleaks
+        run: |
+          GL_VERSION=8.18.3
+          curl -sSL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v${GL_VERSION}/gitleaks_${GL_VERSION}_linux_x64.tar.gz
+          sudo tar -C /usr/local/bin -xzf gitleaks.tar.gz gitleaks
+          rm -f gitleaks.tar.gz
+          gitleaks version
+
+      - name: Install kubeconform
+        run: |
+          KCF_VERSION=0.6.7
+          curl -sSL -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v${KCF_VERSION}/kubeconform-linux-amd64.tar.gz
+          sudo tar -C /usr/local/bin -xzf kubeconform.tar.gz kubeconform
+          rm -f kubeconform.tar.gz
+          kubeconform -v
+
+      - name: Install trivy
+        run: |
+          echo "Installing Trivy repository"
+          curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+          trivy --version
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_wrapper: false
+
+      - name: Setup Helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2.1.0
+
+      - name: Python security tools
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pip-audit checkov
+
+      - name: Run merge gate checks
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+        run: bash hooks/ci-merge-gate.sh

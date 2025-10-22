@@ -52,12 +52,12 @@ run_security_tool() {
     local binary=$2
     local command=$3
     local description=$4
-    
+
     if command -v "$binary" &> /dev/null; then
         SECURITY_TOOLS_FOUND=true
         echo -e "${BOLD}Running ${tool_name} - ${description}...${NC}"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        
+
         if eval "$command"; then
             echo -e "  ${GREEN}✓ ${tool_name} scan completed${NC}"
         else
@@ -77,19 +77,19 @@ PYTHON_FILES=$(echo "$FILES" | grep "\.py$" || true)
 if [[ -n "$PYTHON_FILES" ]]; then
     echo -e "${BOLD}${MAGENTA}Python Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
 # Bandit for Python security
     run_security_tool "Bandit" \
         "bandit" \
         "bandit -r . -x tests/ -f json -o /tmp/bandit-report.json || true" \
         "Python security linter"
-    
+
     # Safety for dependency vulnerabilities
     run_security_tool "Safety" \
         "safety" \
         "safety check --json || true" \
         "Python dependency vulnerability checker"
-    
+
     # Semgrep for advanced security patterns
     run_security_tool "Semgrep" \
         "semgrep" \
@@ -102,7 +102,7 @@ JS_FILES=$(echo "$FILES" | grep -E "\.(js|ts|jsx|tsx)$" || true)
 if [[ -n "$JS_FILES" ]]; then
     echo -e "${BOLD}${MAGENTA}JavaScript/TypeScript Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
 # npm audit for Node.js dependencies
     if [[ -f "package.json" ]]; then
         run_security_tool "npm audit" \
@@ -110,7 +110,7 @@ if [[ -n "$JS_FILES" ]]; then
             "npm audit --audit-level=moderate || true" \
             "Node.js dependency vulnerability check"
     fi
-    
+
     # ESLint with security plugin (only if config exists)
     if [[ -f ".eslintrc.security.js" ]]; then
         run_security_tool "ESLint Security" \
@@ -125,23 +125,23 @@ TERRAFORM_FILES=$(echo "$FILES" | grep -E "\.(tf|hcl)$" || true)
 if [[ -n "$TERRAFORM_FILES" ]]; then
     echo -e "${BOLD}${MAGENTA}Infrastructure as Code Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     # Get unique directories containing terraform files
     TERRAFORM_DIRS=$(echo "$TERRAFORM_FILES" | xargs -n1 dirname | sort -u)
-    
+
     for dir in $TERRAFORM_DIRS; do
         echo -e "${BLUE}Scanning $dir...${NC}"
-        
+
         # TFSec
         run_security_tool "TFSec" \
             "tfsec \"$dir\" --minimum-severity MEDIUM --format lovely || true" \
             "Terraform security scanner"
-        
+
         # Checkov
         run_security_tool "Checkov" \
             "checkov -d \"$dir\" --framework terraform --quiet || true" \
             "Policy-as-Code scanner"
-        
+
         # Terrascan
         run_security_tool "Terrascan" \
             "terrascan scan -i terraform -d \"$dir\" || true" \
@@ -154,19 +154,19 @@ DOCKER_FILES=$(echo "$FILES" | grep -E "(Dockerfile|docker-compose.*\.ya?ml)$" |
 if [[ -n "$DOCKER_FILES" ]] || [[ -f "Dockerfile" ]] || [[ -f "docker-compose.yml" ]]; then
     echo -e "${BOLD}${MAGENTA}Container Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
 # Trivy for comprehensive container scanning
     run_security_tool "Trivy" \
         "trivy" \
         "trivy config . --severity HIGH,CRITICAL --exit-code 0 || true" \
         "Comprehensive security scanner"
-    
+
     # Hadolint for Dockerfile best practices
     run_security_tool "Hadolint" \
         "hadolint" \
         "find . -name 'Dockerfile*' -exec hadolint {} + || true" \
         "Dockerfile linter"
-    
+
     # Docker Bench Security (if available)
     run_security_tool "Docker Bench" \
         "docker-bench-security" \
@@ -179,7 +179,7 @@ CONFIG_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml|json|env|config)$" || true)
 if [[ -n "$CONFIG_FILES" ]]; then
     echo -e "${BOLD}${MAGENTA}Configuration Security Scanning${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     # Check for secrets in config files
     echo -e "${BLUE}Checking configuration files for secrets...${NC}"
 for file in $CONFIG_FILES; do
@@ -257,7 +257,7 @@ EXIT_CODE=0
 
 if [[ $TOTAL_HIGH -gt 0 ]]; then
     echo -e "${RED}❌ Found $TOTAL_HIGH high severity issue(s)${NC}"
-    
+
     if [[ "$FAIL_ON_HIGH_SEVERITY" = "true" ]]; then
         EXIT_CODE=1
     fi
@@ -265,7 +265,7 @@ fi
 
 if [[ $TOTAL_MEDIUM -gt 0 ]]; then
     echo -e "${YELLOW}⚠️  Found $TOTAL_MEDIUM medium severity issue(s)${NC}"
-    
+
     if [[ "$FAIL_ON_MEDIUM_SEVERITY" = "true" ]]; then
         EXIT_CODE=1
     fi

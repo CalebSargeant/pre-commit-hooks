@@ -32,18 +32,18 @@ run_perf_test() {
     local test_name=$1
     local command=$2
     local threshold=$3
-    
+
     echo -e "${BLUE}Running $test_name...${NC}"
-    
+
     TESTS_RUN=$((TESTS_RUN + 1))
-    
+
     # Measure execution time
     start_time=$(date +%s.%N)
-    
+
     if eval "$command" >/dev/null 2>&1; then
         end_time=$(date +%s.%N)
         duration=$(echo "$end_time - $start_time" | bc -l)
-        
+
         if (( $(echo "$duration > $threshold" | bc -l) )); then
             echo -e "  ${YELLOW}⚠ $test_name took ${duration}s (threshold: ${threshold}s)${NC}"
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
@@ -61,12 +61,12 @@ run_perf_test() {
 if [[ -f "backend/lambda_handler.py" ]]; then
     echo -e "${BOLD}Python Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     # Import time test
     run_perf_test "Python import time" \
         "python3 -c 'import backend.lambda_handler'" \
         "2.0"
-    
+
     # Basic function test
     if python3 -c "from backend.lambda_handler import lambda_handler" 2>/dev/null; then
         run_perf_test "Lambda handler initialization" \
@@ -79,21 +79,21 @@ fi
 if [[ -f "frontend/package.json" ]]; then
     echo -e "${BOLD}Frontend Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     cd frontend
-    
+
     # Build time test
     if [[ -f "package.json" ]] && grep -q "build" package.json; then
         run_perf_test "Frontend build time" \
             "npm run build" \
             "30.0"
     fi
-    
+
     # Bundle size check
     if [[ -d "dist" ]] || [[ -d "build" ]]; then
         BUILD_DIR="dist"
         [[ -d "build" ]] && BUILD_DIR="build"
-        
+
         BUNDLE_SIZE=$(du -sm $BUILD_DIR 2>/dev/null | cut -f1 || echo "0")
         if [[ "$BUNDLE_SIZE" -gt 10 ]]; then
             echo -e "  ${YELLOW}⚠ Bundle size is ${BUNDLE_SIZE}MB (consider optimization)${NC}"
@@ -103,7 +103,7 @@ if [[ -f "frontend/package.json" ]]; then
         fi
         TESTS_RUN=$((TESTS_RUN + 1))
     fi
-    
+
     cd ..
 fi
 
@@ -111,12 +111,12 @@ fi
 if [[ -f "Dockerfile" ]]; then
     echo -e "${BOLD}Container Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     # Docker build time (using cache)
     run_perf_test "Docker build time" \
         "docker build -t exploitum-test ." \
         "60.0"
-    
+
     # Check image size
     if docker images exploitum-test --format "table {{.Size}}" | tail -n1 >/dev/null 2>&1; then
         IMAGE_SIZE=$(docker images exploitum-test --format "table {{.Size}}" | tail -n1 | sed 's/MB//')
@@ -127,7 +127,7 @@ if [[ -f "Dockerfile" ]]; then
             echo -e "  ${GREEN}✓ Docker image size is ${IMAGE_SIZE}${NC}"
         fi
         TESTS_RUN=$((TESTS_RUN + 1))
-        
+
         # Clean up test image
         docker rmi exploitum-test >/dev/null 2>&1 || true
     fi
@@ -137,19 +137,19 @@ fi
 if [[ -d "terraform" ]]; then
     echo -e "${BOLD}Infrastructure Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     cd terraform
-    
+
     # Terraform plan time
     if [[ -f "main.tf" ]]; then
         run_perf_test "Terraform plan time" \
             "terraform plan -out=tfplan" \
             "15.0"
-        
+
         # Clean up plan file
         rm -f tfplan
     fi
-    
+
     cd ..
 fi
 
@@ -157,7 +157,7 @@ fi
 if [[ -f "backend/lambda_handler.py" ]]; then
     echo -e "${BOLD}API Performance Tests${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     # Check if we can run a simple API test
     if python3 -c "import requests" 2>/dev/null; then
         # This would need to be adapted based on your actual API
