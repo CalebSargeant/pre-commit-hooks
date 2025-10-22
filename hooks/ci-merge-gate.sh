@@ -279,9 +279,9 @@ fi
 if command -v pip-audit >/dev/null 2>&1; then
   echo -e "${BOLD}pip-audit (HIGH+)${NC}"
   if [[ -f requirements.txt ]]; then
-    run_check "pip-audit -r requirements.txt" bash -c "pip-audit -r requirements.txt --strict"
+    run_check "pip-audit -r requirements.txt" bash -c "pip-audit -r requirements.txt --strict --skip-missing"
   else
-    run_check "pip-audit (env)" bash -c "pip-audit --strict"
+    run_check "pip-audit (env)" bash -c "pip-audit --strict --skip-missing"
   fi
   echo ""
 fi

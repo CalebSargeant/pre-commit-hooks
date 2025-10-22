@@ -32,61 +32,86 @@ jobs:
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2.1.0
 
+      - name: Restore tools cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: bin
+          key: merge-gate-tools-${{ runner.os }}-v1
+          restore-keys: merge-gate-tools-${{ runner.os }}
+
+      - name: Restore python cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .venv
+          key: merge-gate-venv-${{ runner.os }}-${{ hashFiles('**/requirements.txt', '.python-version') }}-v1
+          restore-keys: merge-gate-venv-${{ runner.os }}
+
       - name: Install tools (parallel)
         run: |
           set -Eeuo pipefail
           mkdir -p bin
           BIN="$PWD/bin"
 
-          # Start all downloads in background
-          (
-            curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download/actionlint.bash | bash -s -- -b "$BIN"
-          ) &
+          # Check if tools already cached
+          if [[ -f "$BIN/actionlint" && -f "$BIN/gitleaks" && -f "$BIN/kubeconform" && -f "$BIN/tfsec" && -f "$BIN/trivy" ]]; then
+            echo "Tools already cached, skipping downloads"
+          else
+            # Start all downloads in background
+            (
+              curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download/actionlint.bash | bash -s -- -b "$BIN"
+            ) &
 
-          (
-            GL_VERSION=8.18.3
-            curl -sSL -o "$BIN/gitleaks.tar.gz" "https://github.com/gitleaks/gitleaks/releases/download/v${GL_VERSION}/gitleaks_${GL_VERSION}_linux_x64.tar.gz"
-            tar -C "$BIN" -xzf "$BIN/gitleaks.tar.gz" gitleaks
-            rm -f "$BIN/gitleaks.tar.gz"
-          ) &
+            (
+              GL_VERSION=8.18.3
+              curl -sSL -o "$BIN/gitleaks.tar.gz" "https://github.com/gitleaks/gitleaks/releases/download/v${GL_VERSION}/gitleaks_${GL_VERSION}_linux_x64.tar.gz"
+              tar -C "$BIN" -xzf "$BIN/gitleaks.tar.gz" gitleaks
+              rm -f "$BIN/gitleaks.tar.gz"
+            ) &
 
-          (
-            KCF_VERSION=0.6.7
-            curl -sSL -o "$BIN/kubeconform.tar.gz" "https://github.com/yannh/kubeconform/releases/download/v${KCF_VERSION}/kubeconform-linux-amd64.tar.gz"
-            tar -C "$BIN" -xzf "$BIN/kubeconform.tar.gz" kubeconform
-            rm -f "$BIN/kubeconform.tar.gz"
-          ) &
+            (
+              KCF_VERSION=0.6.7
+              curl -sSL -o "$BIN/kubeconform.tar.gz" "https://github.com/yannh/kubeconform/releases/download/v${KCF_VERSION}/kubeconform-linux-amd64.tar.gz"
+              tar -C "$BIN" -xzf "$BIN/kubeconform.tar.gz" kubeconform
+              rm -f "$BIN/kubeconform.tar.gz"
+            ) &
 
-          (
-            curl -sSfL -o "$BIN/tfsec" https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
-            chmod +x "$BIN/tfsec"
-          ) &
+            (
+              curl -sSfL -o "$BIN/tfsec" https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
+              chmod +x "$BIN/tfsec"
+            ) &
 
-          (
-            TV=v0.52.3
-            curl -sSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/${TV}/trivy_${TV#v}_Linux-64bit.tar.gz"
-            tar -xzf trivy.tar.gz trivy
-            mv trivy "$BIN/"
-            rm -f trivy.tar.gz
-          ) &
+            (
+              TV=v0.52.3
+              curl -sSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/${TV}/trivy_${TV#v}_Linux-64bit.tar.gz"
+              tar -xzf trivy.tar.gz trivy
+              mv trivy "$BIN/"
+              rm -f trivy.tar.gz
+            ) &
+
+            wait
+          fi
 
           # APT installs (serial, requires lock)
           sudo apt-get update
           sudo apt-get install -y yamllint python3-pip
 
-          # Python tools in background
-          (
-            python3 -m pip install --upgrade pip
-            python3 -m pip install pip-audit checkov
-          ) &
-
-          wait
           echo "$BIN" >> "$GITHUB_PATH"
+
+      - name: Setup python venv
+        run: |
+          set -Eeuo pipefail
+          if [[ ! -d .venv ]]; then
+            python3 -m venv .venv
+          fi
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install pip-audit checkov
+          deactivate
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Run merge gate checks
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
-        run: |
-          export PATH="$PWD/bin:$PATH"
-          bash hooks/ci-merge-gate.sh
+          PATH: ${{ github.workspace }}/bin:${{ github.workspace }}/.venv/bin:${{ env.PATH }}
+        run: bash hooks/ci-merge-gate.sh
