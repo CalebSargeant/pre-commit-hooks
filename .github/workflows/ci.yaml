@@ -1,4 +1,6 @@
 name: Run Pre-commit Hooks
+permissions:
+  contents: read
 
 on:
   pull_request:
