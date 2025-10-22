@@ -50,7 +50,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p bin
-          BIN="$PWD/bin"
+          export BIN="$PWD/bin"
 
           # Check if tools already cached
           if [[ -f "$BIN/actionlint" && -f "$BIN/gitleaks" && -f "$BIN/kubeconform" && -f "$BIN/tfsec" && -f "$BIN/trivy" ]]; then
@@ -121,4 +121,4 @@ jobs:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           PATH: ${{ github.workspace }}/bin:${{ github.workspace }}/.venv/bin:${{ env.PATH }}
-        run: chmod +x hooks/ci-merge-gate.sh && hooks/ci-merge-gate.sh
+        run: hooks/ci-merge-gate.sh
