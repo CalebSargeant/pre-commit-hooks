@@ -292,7 +292,16 @@ fi
 # ----------------------------------------------------------------------
 # ⚙️ Shebang validation for executable scripts
 # ----------------------------------------------------------------------
-EXEC_FILES=$(echo "$FILES" | xargs file 2>/dev/null | grep "executable" | cut -d: -f1 || true)
+EXEC_FILES=""
+for f in $FILES; do
+    [[ -f "$f" ]] || continue
+    # Check if file has executable bit set in git
+    mode=$(git ls-files -s -- "$f" | awk '{print $1}')
+    # Check for 100755 (executable)
+    if [[ "$mode" == "100755" ]]; then
+        EXEC_FILES="$EXEC_FILES $f"
+    fi
+done
 if [[ -n "$EXEC_FILES" ]]; then
     for f in $EXEC_FILES; do
         if ! head -n1 "$f" | grep -Eq '^#!'; then
