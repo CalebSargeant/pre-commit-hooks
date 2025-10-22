@@ -1,4 +1,4 @@
-name: Merge Gate CI
+name: CI
 permissions:
   contents: read
   pull-requests: read
@@ -64,7 +64,7 @@ jobs:
 
             echo "Downloading gitleaks..."
             (
-              GL_VERSION=8.18.3
+              GL_VERSION=$(curl -sSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.tag_name' | sed 's/^v//')
               curl -sSL -o "$BIN/gitleaks.tar.gz" "https://github.com/gitleaks/gitleaks/releases/download/v${GL_VERSION}/gitleaks_${GL_VERSION}_linux_x64.tar.gz"
               tar -C "$BIN" -xzf "$BIN/gitleaks.tar.gz" gitleaks
               rm -f "$BIN/gitleaks.tar.gz"
@@ -72,7 +72,7 @@ jobs:
 
             echo "Downloading kubeconform..."
             (
-              KCF_VERSION=0.6.7
+              KCF_VERSION=$(curl -sSL https://api.github.com/repos/yannh/kubeconform/releases/latest | jq -r '.tag_name' | sed 's/^v//')
               curl -sSL -o "$BIN/kubeconform.tar.gz" "https://github.com/yannh/kubeconform/releases/download/v${KCF_VERSION}/kubeconform-linux-amd64.tar.gz"
               tar -C "$BIN" -xzf "$BIN/kubeconform.tar.gz" kubeconform
               rm -f "$BIN/kubeconform.tar.gz"
@@ -80,15 +80,15 @@ jobs:
 
             echo "Downloading tfsec..."
             (
-              curl -sSfL -o "$BIN/tfsec" https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
+              TFSEC_VERSION=$(curl -sSL https://api.github.com/repos/aquasecurity/tfsec/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+              curl -sSL -o "$BIN/tfsec" https://github.com/aquasecurity/tfsec/releases/download/v${TFSEC_VERSION}/tfsec-linux-amd64
               chmod +x "$BIN/tfsec"
             ) &
 
             echo "Downloading trivy..."
             (
-              TV=v0.52.3
-              curl -sSfL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/${TV}/trivy_${TV#v}_linux_amd64.tar.gz" || \
-              curl -sSfL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/${TV}/trivy_Linux-64bit.tar.gz"
+              TV=$(curl -sSL https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r '.tag_name')
+              curl -sSfL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/${TV}/trivy_${TV#v}_linux_amd64.tar.gz"
               tar -xzf trivy.tar.gz trivy
               mv trivy "$BIN/"
               rm -f trivy.tar.gz
