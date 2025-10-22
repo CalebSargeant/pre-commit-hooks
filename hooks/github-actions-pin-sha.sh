@@ -192,7 +192,8 @@ pin_file() {
     fi
 
   # Write the replacement in-place by line number
-    awk -v ln="$ln" -v repl="$new_line" 'NR==ln{$0=repl} {print}' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+awk -v ln="$ln" -v repl="$new_line" 'NR==ln{$0=repl} {print}' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+    git add -- "$file" 2>/dev/null || true
     changed=1
   done < <(grep -nE '^[[:space:]]*(-[[:space:]]*)?uses:[[:space:]]*[^#]+@' "$file" || true)
 

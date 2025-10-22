@@ -13,6 +13,9 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
 
+# Autofix behavior
+HOOKS_AUTOFIX=${HOOKS_AUTOFIX:-1}
+
 echo -e "${BOLD}${BLUE}🏗️ Terraform Comprehensive Check${NC}"
 echo -e "${BOLD}${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 
@@ -83,12 +86,20 @@ for dir in $TF_DIRS; do
     echo -e "${BOLD}${BLUE}Processing directory: $dir${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# 1. Terraform Format
-    run_tf_tool "terraform fmt" \
-        "terraform" \
-        "terraform fmt -check -recursive -diff" \
-        "Code formatting" \
-        "$dir"
+# 1. Terraform Format (auto-fix when enabled)
+    if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
+        run_tf_tool "terraform fmt" \
+            "terraform" \
+            "terraform fmt -recursive" \
+            "Code formatting" \
+            "$dir"
+    else
+        run_tf_tool "terraform fmt" \
+            "terraform" \
+            "terraform fmt -check -recursive -diff" \
+            "Code formatting" \
+            "$dir"
+    fi
 
     # 2. Terraform Validate (only if .terraform exists or we can init)
     if [[ -d "$dir/.terraform" ]] || terraform -chdir="$dir" init -backend=false >/dev/null 2>&1; then
@@ -120,6 +131,13 @@ for dir in $TF_DIRS; do
         "checkov" \
         "checkov -d . --framework terraform --quiet" \
         "Policy compliance checking" \
+        "$dir"
+
+    # 6. Terrascan (IaC security)
+    run_tf_tool "terrascan" \
+        "terrascan" \
+        "terrascan scan -i terraform -d ." \
+        "IaC security scanner" \
         "$dir"
 
     # 6. Terraform Docs (if README exists or we should create docs)
@@ -186,11 +204,17 @@ if [[ -n "$HCL_FILES" ]]; then
 
             # Basic HCL syntax check
             if command -v terragrunt &> /dev/null; then
-                if terragrunt hclfmt --terragrunt-check --terragrunt-working-dir "$(dirname "$hcl_file")" >/dev/null 2>&1; then
-                    echo -e "  ${GREEN}✓ HCL formatting OK${NC}"
+                if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
+                    terragrunt hclfmt --terragrunt-working-dir "$(dirname "$hcl_file")" >/dev/null 2>&1 || true
+                    git add -- "$hcl_file" 2>/dev/null || true
+                    echo -e "  ${GREEN}✓ Auto-formatted HCL${NC}"
                 else
-                    echo -e "  ${YELLOW}⚠ HCL formatting issues${NC}"
-                    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+                    if terragrunt hclfmt --terragrunt-check --terragrunt-working-dir "$(dirname "$hcl_file")" >/dev/null 2>&1; then
+                        echo -e "  ${GREEN}✓ HCL formatting OK${NC}"
+                    else
+                        echo -e "  ${YELLOW}⚠ HCL formatting issues${NC}"
+                        ISSUES_FOUND=$((ISSUES_FOUND + 1))
+                    fi
                 fi
             fi
         fi
