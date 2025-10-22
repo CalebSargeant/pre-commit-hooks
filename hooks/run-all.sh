@@ -32,6 +32,9 @@ HOOKS_SUMMARY_LINES=${HOOKS_SUMMARY_LINES:-60}
 HOOKS_DEBUG=${HOOKS_DEBUG:-0}
 mkdir -p "$HOOKS_LOG_DIR"
 
+# Default to enabling auto-fix in sub-hooks unless overridden
+export HOOKS_AUTOFIX=${HOOKS_AUTOFIX:-1}
+
 hr() { printf '%*s\n' "${1:-70}" '' | tr ' ' '─'; }
 
 note() { printf "${DIM}%s${NC}\n" "$*"; }
@@ -171,6 +174,8 @@ HAS_PYTHON=$(echo "$FILES" | grep -q "\.py$" && echo "true" || echo "false")
 HAS_JAVASCRIPT=$(echo "$FILES" | grep -qE "\.(js|ts|jsx|tsx)$" && echo "true" || echo "false")
 HAS_TERRAFORM=$(echo "$FILES" | grep -qE "\.(tf|hcl)$" && echo "true" || echo "false")
 HAS_DOCKER=$(echo "$FILES" | grep -qE "(Dockerfile|docker-compose.*\.ya?ml)" && echo "true" || echo "false")
+HAS_KUSTOMIZE=$(echo "$FILES" | grep -qE "^kubernetes/|kustomization\.ya?ml$" && echo "true" || echo "false")
+HAS_DOCKER_BAKE=$(echo "$FILES" | grep -qE "(^|/)docker-bake\.hcl$|(^|/)bake\.hcl$" && echo "true" || echo "false")
 
 # Always run security checks (critical)
 run_validation "🛡️  Security Scan" "$STAGE_BOTH" "security-check.sh" "Comprehensive security scanning"
@@ -180,6 +185,8 @@ run_validation "🛡️  Security Scan" "$STAGE_BOTH" "security-check.sh" "Compr
 [[ "$HAS_JAVASCRIPT" = "true" ]] && run_validation "📋 JavaScript Quality" "$STAGE_PRE_COMMIT" "javascript-quality.sh" "JavaScript/TypeScript formatting and linting"
 [[ "$HAS_TERRAFORM" = "true" ]] && run_validation "🏗️  Infrastructure" "$STAGE_PRE_COMMIT" "terraform-quality.sh" "Terraform validation and security"
 [[ "$HAS_DOCKER" = "true" ]] && run_validation "🐋 Container Security" "$STAGE_PRE_COMMIT" "docker-security.sh" "Docker and container validation"
+[[ "$HAS_DOCKER_BAKE" = "true" ]] && run_validation "🧱 Docker Bake" "$STAGE_PRE_COMMIT" "docker-bake-validate.sh" "Validate docker-bake.hcl with buildx"
+[[ "$HAS_KUSTOMIZE" = "true" ]] && run_validation "☸️  Kustomize" "$STAGE_PRE_COMMIT" "kustomize-validation.sh" "Validate kustomization builds"
 
 # General file validations
 run_validation "🔗 Actions SHA pinning" "$STAGE_PRE_COMMIT" "github-actions-pin-sha.sh" "Pin GitHub Actions to SHAs with semver comments"

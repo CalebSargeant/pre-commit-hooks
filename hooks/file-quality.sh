@@ -81,9 +81,22 @@ if [[ -n "$LARGE_FILES" ]]; then
 fi
 
 # ----------------------------------------------------------------------
-# 🧾 YAML validation (and optionally auto-format)
+# 🧾 YAML validation (syntax + optional formatting)
 # ----------------------------------------------------------------------
 YAML_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml)$" | while read -r f; do [[ -f "$f" ]] && echo "$f"; done || true)
+# Syntax check via Python yaml if available
+if [[ -n "$YAML_FILES" ]] && command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
+    for yf in $YAML_FILES; do
+        if ! python3 - <<PY 2>/dev/null
+import sys, yaml
+yaml.safe_load(open(sys.argv[1]))
+PY
+"$yf"; then
+            echo -e "${RED}❌ Invalid YAML: $yf${NC}"
+            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        fi
+    done
+fi
 YAML_LINT_FAIL=0
 if [[ -n "$YAML_FILES" ]] && command -v yamllint >/dev/null 2>&1; then
     if ! echo "$YAML_FILES" | xargs -n1 yamllint -d '{extends: relaxed, rules: {line-length: {max: 120}}}' >/dev/null 2>&1; then
@@ -93,11 +106,11 @@ if [[ -n "$YAML_FILES" ]] && command -v yamllint >/dev/null 2>&1; then
             # Prefer prettier if available
             if npx --no-install prettier --version >/dev/null 2>&1; then
                 npx --no-install prettier --write "$YAML_FILES" >/dev/null 2>&1 || true
-                git add -- "$YAML_FILES" 2>/dev/null || true
+                git add -- $YAML_FILES 2>/dev/null || true
                 echo -e "${GREEN}✓ Auto-formatted YAML with Prettier${NC}"
             elif command -v prettier >/dev/null 2>&1; then
-                prettier --write "$YAML_FILES" >/dev/null 2>&1 || true
-                git add -- "$YAML_FILES" 2>/dev/null || true
+                prettier --write $YAML_FILES >/dev/null 2>&1 || true
+                git add -- $YAML_FILES 2>/dev/null || true
                 echo -e "${GREEN}✓ Auto-formatted YAML with Prettier${NC}"
             fi
             # Re-run lint to confirm
@@ -112,14 +125,39 @@ if (( YAML_LINT_FAIL )); then
 fi
 
 # ----------------------------------------------------------------------
-# 🧩 JSON validation
+# 🧩 JSON validation and optional auto-format
 # ----------------------------------------------------------------------
 JSON_FILES=$(echo "$FILES" | grep "\.json$" || true)
 if [[ -n "$JSON_FILES" ]]; then
     for json_file in $JSON_FILES; do
-        if [[ -f "$json_file" ]] && ! python3 -m json.tool "$json_file" >/dev/null 2>&1; then
+        [[ -f "$json_file" ]] || continue
+        if ! python3 -m json.tool "$json_file" >/dev/null 2>&1; then
             echo -e "${RED}❌ Invalid JSON: $json_file${NC}"
+            if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+                # Try to pretty-print if parser is available and input is actually valid for that parser
+                if command -v jq >/dev/null 2>&1 && jq -M . "$json_file" >/dev/null 2>&1; then
+                    tmp=$(mktemp) && jq -M . "$json_file" > "$tmp" && mv "$tmp" "$json_file"
+                    git add -- "$json_file" 2>/dev/null || true
+                    echo -e "  ${GREEN}✓ Auto-formatted JSON: $json_file${NC}"
+                    continue
+                elif python3 -m json.tool "$json_file" >/dev/null 2>&1; then
+                    tmp=$(mktemp) && python3 -m json.tool "$json_file" > "$tmp" 2>/dev/null && mv "$tmp" "$json_file"
+                    git add -- "$json_file" 2>/dev/null || true
+                    echo -e "  ${GREEN}✓ Auto-formatted JSON: $json_file${NC}"
+                    continue
+                fi
+            fi
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        else
+            if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+                if command -v jq >/dev/null 2>&1; then
+                    tmp=$(mktemp) && jq -M . "$json_file" > "$tmp" && mv "$tmp" "$json_file"
+                else
+                    tmp=$(mktemp) && python3 -m json.tool "$json_file" > "$tmp" 2>/dev/null && mv "$tmp" "$json_file"
+                fi
+                git add -- "$json_file" 2>/dev/null || true
+                echo -e "  ${GREEN}✓ Normalized JSON formatting: $json_file${NC}"
+            fi
         fi
     done
 fi
@@ -128,55 +166,127 @@ fi
 # 🐚 Shell script formatting (shfmt)
 # ----------------------------------------------------------------------
 if command -v shfmt >/dev/null 2>&1; then
-    SHFMT_OUT=$(shfmt -d hooks 2>&1 || true)
-    if [[ -n "$SHFMT_OUT" ]]; then
-        echo -e "${YELLOW}⚠ Shell formatting issues detected by shfmt:${NC}"
-        echo "$SHFMT_OUT" | head -50
+    if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+        shfmt -w hooks >/dev/null 2>&1 || true
+        git add -- hooks/*.sh 2>/dev/null || true
+        echo -e "${GREEN}✓ Auto-formatted shell scripts in hooks/${NC}"
+    else
+        SHFMT_OUT=$(shfmt -d hooks 2>&1 || true)
+        if [[ -n "$SHFMT_OUT" ]]; then
+            echo -e "${YELLOW}⚠ Shell formatting issues detected by shfmt:${NC}"
+            echo "$SHFMT_OUT" | head -50
+            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        fi
+    fi
+fi
+
+# ----------------------------------------------------------------------
+# 🧪 GitHub Actions workflow lint (actionlint) + extra checks
+# ----------------------------------------------------------------------
+WORKFLOW_FILES=$(echo "$FILES" | grep -E '^\.github/workflows/.*\.ya?ml$' || true)
+ACTION_FILES=$(echo "$FILES" | grep -E '^\.github/actions/.*\.ya?ml$' || true)
+if [[ -n "$WORKFLOW_FILES" || -d ".github/workflows" ]] && command -v actionlint >/dev/null 2>&1; then
+    if ! actionlint -color -shellcheck= >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠ actionlint found issues in workflow files${NC}"
+        ISSUES_FOUND=$((ISSUES_FOUND + 1))
+    fi
+    # Deprecated actions hints and basic secrets heuristics
+    if [[ -n "$WORKFLOW_FILES" ]]; then
+        while IFS= read -r wf; do
+            [[ -f "$wf" ]] || continue
+            if grep -qE 'uses:\s*actions/checkout@v[12]' "$wf" 2>/dev/null; then
+                echo -e "  ${YELLOW}⚠ $wf uses actions/checkout@v1/v2 (consider v4)${NC}"
+            fi
+            if grep -qE 'uses:\s*actions/setup-node@v[12]' "$wf" 2>/dev/null; then
+                echo -e "  ${YELLOW}⚠ $wf uses actions/setup-node@v1/v2 (consider v4)${NC}"
+            fi
+            if grep -E "(password|token|key|secret)\s*:\s*['\"][^'\"]+['\"]" "$wf" 2>/dev/null | grep -vqE 'secrets\.|\$\{\{'; then
+                echo -e "  ${RED}❌ $wf may contain hardcoded secrets${NC}"
+                ISSUES_FOUND=$((ISSUES_FOUND + 1))
+            fi
+        done <<<"$WORKFLOW_FILES"
+    fi
+fi
+# Basic YAML validity for .github/actions/*.yml
+if [[ -n "$ACTION_FILES" ]] && command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
+    while IFS= read -r af; do
+        [[ -f "$af" ]] || continue
+        if ! python3 - <<PY 2>/dev/null
+import sys, yaml
+yaml.safe_load(open(sys.argv[1]))
+PY
+"$af"; then
+            echo -e "${RED}❌ Invalid YAML: $af${NC}"
+            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        fi
+    done <<<"$ACTION_FILES"
+fi
+
+# ----------------------------------------------------------------------
+# 🔄 Mixed line ending check (CRLF) with optional auto-convert
+# ----------------------------------------------------------------------
+MIXED_ENDINGS_LIST=""
+for f in $FILES; do
+    [[ -f "$f" ]] || continue
+    is_text_file "$f" || continue
+    if grep -q $'\r' "$f" 2>/dev/null; then
+        MIXED_ENDINGS_LIST="$MIXED_ENDINGS_LIST\n$f"
+        if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+            if command -v dos2unix >/dev/null 2>&1; then
+                dos2unix "$f" >/dev/null 2>&1 || true
+            else
+                perl -pi -e 's/\r\n?/\n/g' -- "$f" 2>/dev/null || true
+            fi
+            git add -- "$f" 2>/dev/null || true
+        fi
+    fi
+done
+MIXED_ENDINGS=$(echo -e "$MIXED_ENDINGS_LIST" | sed '/^$/d' | head -3)
+if [[ -n "$MIXED_ENDINGS_LIST" ]]; then
+    if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+        echo -e "${GREEN}✓ Converted CRLF to LF in affected files${NC}"
+        REMAIN=0
+        for f in $FILES; do
+            [[ -f "$f" ]] || continue
+            is_text_file "$f" || continue
+            if grep -q $'\r' "$f" 2>/dev/null; then REMAIN=1; break; fi
+        done
+        if [[ $REMAIN -ne 0 ]]; then
+            echo -e "${YELLOW}⚠ Files with Windows (CRLF) line endings remain:${NC}"
+            echo "$MIXED_ENDINGS"
+            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        fi
+    else
+        echo -e "${YELLOW}⚠ Files with Windows (CRLF) line endings detected:${NC}"
+        echo "$MIXED_ENDINGS"
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
     fi
 fi
 
 # ----------------------------------------------------------------------
-# 🧪 GitHub Actions workflow lint (actionlint)
+# 🧾 Byte Order Mark (BOM) / UTF-8 enforcement (auto-remove when enabled)
 # ----------------------------------------------------------------------
-WF_FILES=$(echo "$FILES" | grep -E '^\.github/workflows/.*\.ya?ml$' || true)
-if [[ -n "$WF_FILES" || -d ".github/workflows" ]] && command -v actionlint >/dev/null 2>&1 && \
-   ! actionlint -color -shellcheck= >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠ actionlint found issues in workflow files${NC}"
-    ISSUES_FOUND=$((ISSUES_FOUND + 1))
-fi
-
-# ----------------------------------------------------------------------
-# 🔄 Mixed line ending check (CRLF)
-# ----------------------------------------------------------------------
-MIXED_ENDINGS=$(echo "$FILES" | xargs grep -IlU $'\r' 2>/dev/null || true)
+BOM_LIST=""
 for f in $FILES; do
-    if [[ -f "$f" ]] && grep -q $'\r' "$f" 2>/dev/null; then
-        MIXED_ENDINGS="$MIXED_ENDINGS\n$f"
+    [[ -f "$f" ]] || continue
+    is_text_file "$f" || continue
+    if head -c 3 "$f" | grep -q $'\xEF\xBB\xBF'; then
+        BOM_LIST="$BOM_LIST\n$f"
+        if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+            perl -0777 -pe 's/^\xEF\xBB\xBF//' -i -- "$f" 2>/dev/null || true
+            git add -- "$f" 2>/dev/null || true
+        fi
     fi
 done
-MIXED_ENDINGS=$(echo -e "$MIXED_ENDINGS" | sed '/^$/d' | head -3)
-if [[ -n "$MIXED_ENDINGS" ]]; then
-    echo -e "${YELLOW}⚠ Files with Windows (CRLF) line endings detected:${NC}"
-    echo "$MIXED_ENDINGS"
-    echo -e "   Consider converting with 'dos2unix <file>'."
-    ISSUES_FOUND=$((ISSUES_FOUND + 1))
-fi
-
-# ----------------------------------------------------------------------
-# 🧾 Byte Order Mark (BOM) / UTF-8 enforcement
-# ----------------------------------------------------------------------
-BOM_FILES=""
-for f in $FILES; do
-    if [[ -f "$f" ]] && head -c 3 "$f" | grep -q $'\xEF\xBB\xBF'; then
-        BOM_FILES="$BOM_FILES\n$f"
+BOM_FILES=$(echo -e "$BOM_LIST" | sed '/^$/d' | head -3)
+if [[ -n "$BOM_LIST" ]]; then
+    if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+        echo -e "${GREEN}✓ Removed UTF-8 BOM from affected files${NC}"
+    else
+        echo -e "${YELLOW}⚠ Files containing UTF-8 Byte Order Marks (BOM):${NC}"
+        echo "$BOM_FILES"
+        ISSUES_FOUND=$((ISSUES_FOUND + 1))
     fi
-done
-BOM_FILES=$(echo -e "$BOM_FILES" | sed '/^$/d' | head -3)
-if [[ -n "$BOM_FILES" ]]; then
-    echo -e "${YELLOW}⚠ Files containing UTF-8 Byte Order Marks (BOM):${NC}"
-    echo "$BOM_FILES"
-    ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
 
 # ----------------------------------------------------------------------
@@ -193,6 +303,24 @@ if [[ -n "$EXEC_FILES" ]]; then
 fi
 
 # ----------------------------------------------------------------------
+# Ensure newline at EOF for text files
+if [[ "$HOOKS_AUTOFIX" = "1" ]]; then
+    EOF_FIXED=0
+    for f in $FILES; do
+        [[ -f "$f" ]] || continue
+        is_text_file "$f" || continue
+        if [[ -s "$f" ]] && [[ $(tail -c1 "$f" | wc -l | tr -d ' ') -eq 0 ]]; then
+            printf "\n" >> "$f" 2>/dev/null || true
+            git add -- "$f" 2>/dev/null || true
+            EOF_FIXED=$((EOF_FIXED + 1))
+        fi
+    done
+    if (( EOF_FIXED > 0 )); then
+        echo -e "${GREEN}✓ Added missing newline at EOF to ${EOF_FIXED} file(s)${NC}"
+        FIXED_COUNT=$((FIXED_COUNT + EOF_FIXED))
+    fi
+fi
+
 # ✅ Summary
 # ----------------------------------------------------------------------
 if [[ $ISSUES_FOUND -eq 0 ]]; then

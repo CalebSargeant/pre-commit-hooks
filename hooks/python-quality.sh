@@ -13,6 +13,9 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
 
+# Autofix behavior
+HOOKS_AUTOFIX=${HOOKS_AUTOFIX:-1}
+
 echo -e "${BOLD}${BLUE}🐍 Python Quality Gate${NC}"
 echo -e "${BOLD}${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 
@@ -39,26 +42,38 @@ fi
 echo -e "${BLUE}Context: Validating ${CONTEXT} Python files${NC}"
 echo ""
 
-# 1. Black formatting
+# 1. Black formatting (auto-fix when enabled)
 if command -v black &> /dev/null; then
     echo -e "${BOLD}Running Black (formatter)...${NC}"
-    if black --check --diff $PY_FILES; then
-        echo -e "${GREEN}✓ Black formatting passed${NC}"
+    if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
+        black -q $PY_FILES || true
+        git add -- $PY_FILES 2>/dev/null || true
+        echo -e "  ${GREEN}✓ Auto-formatted with Black${NC}"
     else
-        echo -e "${YELLOW}⚠ Black found formatting issues (auto-fixable)${NC}"
-        ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        if black --check --diff $PY_FILES; then
+            echo -e "${GREEN}✓ Black formatting passed${NC}"
+        else
+            echo -e "${YELLOW}⚠ Black found formatting issues (auto-fixable)${NC}"
+            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        fi
     fi
     echo ""
 fi
 
-# 2. isort import sorting
+# 2. isort import sorting (auto-fix when enabled)
 if command -v isort &> /dev/null; then
     echo -e "${BOLD}Running isort (import sorting)...${NC}"
-    if isort --check-only --diff $PY_FILES; then
-        echo -e "${GREEN}✓ Import sorting passed${NC}"
+    if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
+        isort -q $PY_FILES || true
+        git add -- $PY_FILES 2>/dev/null || true
+        echo -e "  ${GREEN}✓ Auto-sorted imports with isort${NC}"
     else
-        echo -e "${YELLOW}⚠ isort found import issues (auto-fixable)${NC}"
-        ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        if isort --check-only --diff $PY_FILES; then
+            echo -e "${GREEN}✓ Import sorting passed${NC}"
+        else
+            echo -e "${YELLOW}⚠ isort found import issues (auto-fixable)${NC}"
+            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        fi
     fi
     echo ""
 fi
@@ -93,6 +108,5 @@ if [[ $ISSUES_FOUND -eq 0 ]]; then
     exit 0
 else
     echo -e "${YELLOW}⚠️  Found $ISSUES_FOUND Python quality issue(s)${NC}"
-    echo -e "${BLUE}Run 'black .' and 'isort .' to auto-fix formatting issues${NC}"
     exit 1
 fi

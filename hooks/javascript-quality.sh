@@ -13,6 +13,9 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
 
+# Autofix behavior
+HOOKS_AUTOFIX=${HOOKS_AUTOFIX:-1}
+
 echo -e "${BOLD}${BLUE}📋 JavaScript Quality Gate${NC}"
 echo -e "${BOLD}${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 
@@ -62,15 +65,23 @@ if [[ -f "package.json" ]] || [[ -f "frontend/package.json" ]]; then
     if [[ -n "$PRETTIER_CMD" ]]; then
         echo -e "${BOLD}Running Prettier (formatter)...${NC}"
         if [[ "$FRONTEND" -eq 1 ]]; then
-            (cd frontend && $PRETTIER_CMD --check $JS_FILES_LOCAL 2>/dev/null)
+            if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
+                (cd frontend && $PRETTIER_CMD --write $JS_FILES_LOCAL 2>/dev/null || true)
+                (cd frontend && git add -- $JS_FILES_LOCAL 2>/dev/null || true)
+                echo -e "  ${GREEN}✓ Auto-formatted with Prettier${NC}"
+            else
+                (cd frontend && $PRETTIER_CMD --check $JS_FILES_LOCAL 2>/dev/null)
+                [[ $? -ne 0 ]] && { echo -e "${YELLOW}⚠ Prettier found formatting issues${NC}"; ISSUES_FOUND=$((ISSUES_FOUND + 1)); }
+            fi
         else
-            $PRETTIER_CMD --check $JS_FILES_LOCAL 2>/dev/null
-        fi
-        if [[ $? -eq 0 ]]; then
-            echo -e "${GREEN}✓ Prettier formatting passed${NC}"
-        else
-            echo -e "${YELLOW}⚠ Prettier found formatting issues (auto-fixable)${NC}"
-            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+            if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
+                $PRETTIER_CMD --write $JS_FILES_LOCAL 2>/dev/null || true
+                git add -- $JS_FILES 2>/dev/null || true
+                echo -e "  ${GREEN}✓ Auto-formatted with Prettier${NC}"
+            else
+                $PRETTIER_CMD --check $JS_FILES_LOCAL 2>/dev/null
+                [[ $? -ne 0 ]] && { echo -e "${YELLOW}⚠ Prettier found formatting issues${NC}"; ISSUES_FOUND=$((ISSUES_FOUND + 1)); }
+            fi
         fi
         echo ""
     fi
@@ -85,14 +96,24 @@ if [[ -f "package.json" ]] || [[ -f "frontend/package.json" ]]; then
     if [[ -n "$ESLINT_CMD" ]]; then
         echo -e "${BOLD}Running ESLint (linter)...${NC}"
         if [[ "$FRONTEND" -eq 1 ]]; then
-            (cd frontend && $ESLINT_CMD $JS_FILES_LOCAL 2>/dev/null)
+            if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
+                (cd frontend && $ESLINT_CMD --fix $JS_FILES_LOCAL 2>/dev/null || true)
+                (cd frontend && git add -- $JS_FILES_LOCAL 2>/dev/null || true)
+            else
+                (cd frontend && $ESLINT_CMD $JS_FILES_LOCAL 2>/dev/null)
+            fi
         else
-            $ESLINT_CMD $JS_FILES_LOCAL 2>/dev/null
+            if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
+                $ESLINT_CMD --fix $JS_FILES_LOCAL 2>/dev/null || true
+                git add -- $JS_FILES 2>/dev/null || true
+            else
+                $ESLINT_CMD $JS_FILES_LOCAL 2>/dev/null
+            fi
         fi
         if [[ $? -eq 0 ]]; then
             echo -e "${GREEN}✓ ESLint linting passed${NC}"
         else
-            echo -e "${RED}❌ ESLint found linting issues${NC}"
+            echo -e "${YELLOW}⚠ ESLint found issues${NC}"
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
         fi
         echo ""
@@ -155,6 +176,5 @@ if [[ $ISSUES_FOUND -eq 0 ]]; then
     exit 0
 else
     echo -e "${YELLOW}⚠️  Found $ISSUES_FOUND JavaScript quality issue(s)${NC}"
-    echo -e "${BLUE}Consider running 'npm run format' or 'prettier --write .' to auto-fix${NC}"
     exit 1
 fi
