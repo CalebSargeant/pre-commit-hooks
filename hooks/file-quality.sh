@@ -87,11 +87,11 @@ YAML_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml)$" | while read -r f; do [[ -f
 # Syntax check via Python yaml if available
 if [[ -n "$YAML_FILES" ]] && command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
     for yf in $YAML_FILES; do
-        if ! python3 - <<PY 2>/dev/null
+        if ! python3 - "$yf" <<'PY' 2>/dev/null
 import sys, yaml
 yaml.safe_load(open(sys.argv[1]))
 PY
-"$yf"; then
+        then
             echo -e "${RED}❌ Invalid YAML: $yf${NC}"
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
         fi
@@ -211,11 +211,11 @@ fi
 if [[ -n "$ACTION_FILES" ]] && command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
     while IFS= read -r af; do
         [[ -f "$af" ]] || continue
-        if ! python3 - <<PY 2>/dev/null
+        if ! python3 - "$af" <<'PY' 2>/dev/null
 import sys, yaml
 yaml.safe_load(open(sys.argv[1]))
 PY
-"$af"; then
+        then
             echo -e "${RED}❌ Invalid YAML: $af${NC}"
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
         fi
