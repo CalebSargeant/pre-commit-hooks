@@ -57,10 +57,10 @@ jobs:
           sudo mv kubeconform /usr/local/bin/
           rm -f kubeconform.tar.gz
 
-      - name: Setup yamllint
+      - name: Setup yamllint and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y yamllint
+          sudo apt-get install -y yamllint python3-pip
 
       - name: Restore python cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -85,5 +85,6 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
-          PATH: ${{ github.workspace }}/.venv/bin:${{ env.PATH }}
-        run: hooks/ci-merge-gate.sh
+        run: |
+          export PATH="${{ github.workspace }}/.venv/bin:/usr/local/bin:/usr/bin:$PATH"
+          bash hooks/ci-merge-gate.sh
