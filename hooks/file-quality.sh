@@ -83,7 +83,7 @@ fi
 # ----------------------------------------------------------------------
 # 🧾 YAML validation (and optionally auto-format)
 # ----------------------------------------------------------------------
-YAML_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml)$" || true)
+YAML_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml)$" | while read -r f; do [[ -f "$f" ]] && echo "$f"; done || true)
 YAML_LINT_FAIL=0
 if [[ -n "$YAML_FILES" ]] && command -v yamllint >/dev/null 2>&1; then
     if ! echo "$YAML_FILES" | xargs -n1 yamllint -d '{extends: relaxed, rules: {line-length: {max: 120}}}' >/dev/null 2>&1; then
