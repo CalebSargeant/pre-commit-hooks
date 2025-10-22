@@ -57,10 +57,12 @@ jobs:
             echo "Tools already cached, skipping downloads"
           else
             # Start all downloads in background
+            echo "Downloading actionlint..."
             (
               curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download/actionlint.bash | bash -s -- -b "$BIN"
             ) &
 
+            echo "Downloading gitleaks..."
             (
               GL_VERSION=8.18.3
               curl -sSL -o "$BIN/gitleaks.tar.gz" "https://github.com/gitleaks/gitleaks/releases/download/v${GL_VERSION}/gitleaks_${GL_VERSION}_linux_x64.tar.gz"
@@ -68,6 +70,7 @@ jobs:
               rm -f "$BIN/gitleaks.tar.gz"
             ) &
 
+            echo "Downloading kubeconform..."
             (
               KCF_VERSION=0.6.7
               curl -sSL -o "$BIN/kubeconform.tar.gz" "https://github.com/yannh/kubeconform/releases/download/v${KCF_VERSION}/kubeconform-linux-amd64.tar.gz"
@@ -75,11 +78,13 @@ jobs:
               rm -f "$BIN/kubeconform.tar.gz"
             ) &
 
+            echo "Downloading tfsec..."
             (
               curl -sSfL -o "$BIN/tfsec" https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
               chmod +x "$BIN/tfsec"
             ) &
 
+            echo "Downloading trivy..."
             (
               TV=v0.52.3
               curl -sSfL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/${TV}/trivy_${TV#v}_linux_amd64.tar.gz" || \
@@ -93,6 +98,7 @@ jobs:
           fi
 
           # APT installs (serial, requires lock)
+          echo "Installing yamllint..."
           sudo apt-get update
           sudo apt-get install -y yamllint python3-pip
 
@@ -115,4 +121,4 @@ jobs:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           PATH: ${{ github.workspace }}/bin:${{ github.workspace }}/.venv/bin:${{ env.PATH }}
-        run: bash hooks/ci-merge-gate.sh
+        run: ./hooks/ci-merge-gate.sh
