@@ -28,7 +28,7 @@
   entry: hooks/github-actions-pin-sha.sh
   language: script
   files: '^\.github/workflows/.*\.ya?ml$'
-  stages: [pre-push]
+  stages: [pre-commit]
   require_serial: true
 
 - id: security-scan
