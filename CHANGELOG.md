@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.4.1 (2025-10-22)
+
+### Bug Fixes
+
+- Correct YAML validation script to properly pass file arguments to Python
+  ([`f1297d9`](https://github.com/CalebSargeant/pre-commit-hooks/commit/f1297d918e1187b66587079ca3336528617be8b9))
+
+
 ## v1.4.0 (2025-10-22)
 
 ### Bug Fixes
