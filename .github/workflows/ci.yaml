@@ -121,4 +121,4 @@ jobs:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           PATH: ${{ github.workspace }}/bin:${{ github.workspace }}/.venv/bin:${{ env.PATH }}
-        run: ./hooks/ci-merge-gate.sh
+        run: chmod +x hooks/ci-merge-gate.sh && hooks/ci-merge-gate.sh
