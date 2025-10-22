@@ -17,20 +17,25 @@ BOLD='\033[1m'
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   REPO_ROOT=$(git rev-parse --show-toplevel)
   cd "$REPO_ROOT"
+  export PATH="$REPO_ROOT/bin:$PATH"
 fi
 
 echo -e "${BOLD}${BLUE}🔒 Merge Gate Checks (syntax & critical validation)${NC}"
 
 ISSUES=0
 
+# Determine PR merge base once (to avoid double fetch)
+MERGE_BASE=""
+if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
+  # Ensure base and head are available; requires fetch-depth: 0
+  git fetch --no-tags --prune --depth=1 origin "$GITHUB_BASE_REF" "$GITHUB_HEAD_REF" >/dev/null 2>&1 || true
+  MERGE_BASE=$(git merge-base "origin/${GITHUB_BASE_REF}" HEAD 2>/dev/null || echo "")
+fi
+
 # Collect candidate files (prefer changed files in PR)
 FILES=""
-if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
-  # In PR context; requires fetch-depth: 0 in checkout
-  BASE="origin/${GITHUB_BASE_REF}"
-  # Try to ensure base exists (ignore failures if already present)
-  git fetch --no-tags --prune --depth=1 origin "$GITHUB_BASE_REF" "$GITHUB_HEAD_REF" >/dev/null 2>&1 || true
-  FILES=$(git --no-pager diff --name-only "$BASE...HEAD" || echo "")
+if [[ -n "$MERGE_BASE" ]]; then
+  FILES=$(git --no-pager diff --name-only "$MERGE_BASE..HEAD" || echo "")
 fi
 
 # Fallbacks
@@ -80,12 +85,12 @@ fi
 # 2) GitHub Actions workflow validation (actionlint)
 if [[ -d .github/workflows ]]; then
   echo -e "${BOLD}GitHub Actions workflows${NC}"
+  # Ensure local bin path is considered
   if command -v actionlint >/dev/null 2>&1; then
-    if actionlint -color -shellcheck=; then
-      echo -e "  ${GREEN}✓ workflows pass actionlint${NC}"
+    if command -v shellcheck >/dev/null 2>&1; then
+      run_check "actionlint" actionlint -color
     else
-      echo -e "  ${RED}✗ actionlint reported issues${NC}"
-      ISSUES=$((ISSUES+1))
+      run_check "actionlint (no shellcheck)" actionlint -color -shellcheck=
     fi
   else
     echo -e "  ${YELLOW}actionlint not found; skipping workflow lint${NC}"
@@ -104,13 +109,22 @@ if [[ -n "$JSON_FILES" ]]; then
   echo ""
 fi
 
-# 4) TOML validity (Python 3.11+ tomllib)
+# 4) TOML validity (Python 3.11+ tomllib, fallback to tomli)
 TOML_FILES=$(printf '%s\n' "$FILES" | grep -E '\.toml$' || true)
 if [[ -n "$TOML_FILES" ]] && command -v python3 >/dev/null 2>&1; then
   echo -e "${BOLD}TOML syntax${NC}"
   while IFS= read -r f; do
     [[ -f "$f" ]] || continue
-    run_check "TOML parses: $f" python3 -c 'import tomllib,sys; tomllib.load(open(sys.argv[1],"rb"))' "$f"
+    run_check "TOML parses: $f" bash -c 'python3 - "$1" <<'"'"'PY'"'"'
+import sys
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib
+with open(sys.argv[1], "rb") as fh:
+    tomllib.load(fh)
+PY
+' _ "$f"
   done <<< "$TOML_FILES"
   echo ""
 fi
@@ -157,7 +171,7 @@ if [[ -n "$TS_FILES" ]] && npx --no-install tsc -v >/dev/null 2>&1; then
 fi
 
 # 9) Terraform validate (no formatting)
-TF_DIRS=$(printf '%s\n' "$FILES" | grep -E '\.(tf|hcl)$' | xargs -n1 dirname | sort -u || true)
+TF_DIRS=$(printf '%s\n' "$FILES" | grep -E '\.(tf|hcl)$' | sed -E 's#/[^/]+$##' | sed '/^$/d' | sort -u || true)
 if [[ -n "$TF_DIRS" ]] && command -v terraform >/dev/null 2>&1; then
   echo -e "${BOLD}Terraform validate${NC}"
   export TF_IN_AUTOMATION=1
@@ -171,19 +185,29 @@ fi
 
 # 10) Docker Compose config
 COMPOSE_FILES=$(printf '%s\n' "$FILES" | grep -E '(^|.*/)(docker-compose.*\.ya?ml|compose\.ya?ml)$' || true)
-if [[ -n "$COMPOSE_FILES" ]] && command -v docker >/dev/null 2>&1; then
+if [[ -n "$COMPOSE_FILES" ]]; then
   echo -e "${BOLD}Docker Compose config${NC}"
-  while IFS= read -r f; do
-    [[ -f "$f" ]] || continue
-    run_check "docker compose config: $f" bash -c "docker compose -f '$f' config -q"
-  done <<< "$COMPOSE_FILES"
+  compose_cmd=""
+  if docker compose version >/dev/null 2>&1; then
+    compose_cmd="docker compose"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    compose_cmd="docker-compose"
+  fi
+  if [[ -n "$compose_cmd" ]]; then
+    while IFS= read -r f; do
+      [[ -f "$f" ]] || continue
+      run_check "compose config: $f" bash -c "$compose_cmd -f '$f' config -q"
+    done <<< "$COMPOSE_FILES"
+  else
+    echo -e "  ${YELLOW}docker compose not available; skipping compose validation${NC}"
+  fi
   echo ""
 fi
 
 # 11) Helm chart lint
-HELM_DIRS=$(printf '%s\n' "$FILES" | grep -E '(^|.*/)(Chart\.ya?ml)$' | xargs -n1 dirname | sort -u || true)
+HELM_DIRS=$(printf '%s\n' "$FILES" | grep -E '(^|.*/)(Chart\.ya?ml)$' | sed -E 's#/[^/]+$##' | sed '/^$/d' | sort -u || true)
 if [[ -z "$HELM_DIRS" ]] && [[ -d charts ]]; then
-  HELM_DIRS=$(find charts -type f -name 'Chart.yaml' -maxdepth 3 -print0 | xargs -0 -n1 dirname 2>/dev/null | sort -u || true)
+  HELM_DIRS=$(find charts -maxdepth 3 -type f -name 'Chart.yaml' -print | sed -E 's#/[^/]+$##' | sort -u || true)
 fi
 if [[ -n "$HELM_DIRS" ]] && command -v helm >/dev/null 2>&1; then
   echo -e "${BOLD}Helm lint${NC}"
@@ -197,13 +221,8 @@ fi
 # 12) Secrets scanning (gitleaks) on PR range or working tree
 if command -v gitleaks >/dev/null 2>&1; then
   echo -e "${BOLD}Secrets scan (gitleaks)${NC}"
-  BASE=""
-  if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
-    git fetch --no-tags --prune --depth=1 origin "$GITHUB_BASE_REF" "$GITHUB_HEAD_REF" >/dev/null 2>&1 || true
-    BASE=$(git merge-base "origin/${GITHUB_BASE_REF}" HEAD 2>/dev/null || echo "")
-  fi
-  if [[ -n "$BASE" ]]; then
-    run_check "gitleaks (diff ${BASE}..HEAD)" bash -c "gitleaks detect --no-banner --redact --source . --log-opts='${BASE}..HEAD' --exit-code 1"
+  if [[ -n "$MERGE_BASE" ]]; then
+    run_check "gitleaks (diff ${MERGE_BASE}..HEAD)" bash -c "gitleaks detect --no-banner --redact --source . --log-opts='${MERGE_BASE}..HEAD' --exit-code 1"
   else
     run_check "gitleaks (working tree)" bash -c "gitleaks detect --no-banner --redact --source . --no-git --exit-code 1"
   fi
@@ -239,7 +258,7 @@ if [[ -n "$K8S_FILES" ]] && command -v kubeconform >/dev/null 2>&1; then
   echo ""
 fi
 
-KUSTOMIZE_DIRS=$(printf '%s\n' "$FILES" | grep -E '(^|.*/)(kustomization\.ya?ml)$' | xargs -n1 dirname | sort -u || true)
+KUSTOMIZE_DIRS=$(printf '%s\n' "$FILES" | grep -E '(^|.*/)(kustomization\.ya?ml)$' | sed -E 's#/[^/]+$##' | sed '/^$/d' | sort -u || true)
 if [[ -n "$KUSTOMIZE_DIRS" ]] && command -v kustomize >/dev/null 2>&1 && command -v kubeconform >/dev/null 2>&1; then
   echo -e "${BOLD}Kustomize builds (kubeconform)${NC}"
   for d in $KUSTOMIZE_DIRS; do
@@ -260,9 +279,9 @@ fi
 if command -v pip-audit >/dev/null 2>&1; then
   echo -e "${BOLD}pip-audit (HIGH+)${NC}"
   if [[ -f requirements.txt ]]; then
-    run_check "pip-audit -r requirements.txt" bash -c "pip-audit -r requirements.txt --strict --disable-pip-version-check --ignore-vuln GHSA-0000-0000-0000 || true"
+    run_check "pip-audit -r requirements.txt" bash -c "pip-audit -r requirements.txt --strict"
   else
-    run_check "pip-audit (env)" bash -c "pip-audit --strict --disable-pip-version-check || true"
+    run_check "pip-audit (env)" bash -c "pip-audit --strict"
   fi
   echo ""
 fi
