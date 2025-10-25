@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.4.2 (2025-10-25)
+
+### Chores
+
+- **deps**: Bump CalebSargeant/reusable-workflows from 1.0.1 to 1.0.3
+  ([`af3ff20`](https://github.com/CalebSargeant/pre-commit-hooks/commit/af3ff20490f840e8e6343e4c4b3d2c5b18232222))
+
+
 ## v1.4.1 (2025-10-22)
 
 ### Bug Fixes
