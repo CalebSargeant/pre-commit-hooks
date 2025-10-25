@@ -26,13 +26,13 @@ cd "$REPO_ROOT"
 ISSUES_FOUND=0
 CHECKS_RUN=0
 
-# Get Terraform files
+# Get Terraform files (excluding docker-bake.hcl and bake.hcl which are Docker Buildx files)
 STAGED=$(git diff --cached --name-only)
 if [[ -n "$STAGED" ]]; then
-    TF_FILES=$(echo "$STAGED" | grep -E "\.(tf|hcl)$" | grep -v ".terragrunt-cache" || true)
+    TF_FILES=$(echo "$STAGED" | grep -E "\.(tf|hcl)$" | grep -vE "(\.terragrunt-cache|docker-bake\.hcl$|(^|/)bake\.hcl$)" || true)
     CONTEXT="staged"
 else
-    TF_FILES=$(find . -name "*.tf" -o -name "*.hcl" | grep -v ".git" | grep -v ".terragrunt-cache" | head -50)
+    TF_FILES=$(find . -name "*.tf" -o -name "*.hcl" | grep -vE "(\.git|\.terragrunt-cache|docker-bake\.hcl$|(^|/)bake\.hcl$)" | head -50)
     CONTEXT="repository"
 fi
 
