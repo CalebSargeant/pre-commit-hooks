@@ -7,7 +7,7 @@
 > GitHub Actions SHA-pinning**. The `security-scan` and `docker-security` hooks
 > below overlap cinnabar and will be removed in a future release.
 
-Shared Bash-based pre-commit/pre-push hooks for **formatting, file hygiene, repo hygiene, and GitHub Actions SHA-pinning**. Tools are auto-detected and skipped if not installed. Hooks scope to staged files when available; otherwise they fall back to a repository-limited sample to keep runs fast.
+Shared Bash-based pre-commit/pre-push hooks for **formatting, file hygiene, and GitHub Actions SHA-pinning**. Tools are auto-detected and skipped if not installed. Hooks scope to staged files when available; otherwise they fall back to a repository-limited sample to keep runs fast.
 
 ## Quick start
 
