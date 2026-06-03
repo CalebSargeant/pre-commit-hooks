@@ -8,3 +8,13 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-commit, pre-push]
+  - repo: https://github.com/MagmaMoose/chargate
+    rev: v1
+    hooks:
+      - id: shellcheck
+      - id: actionlint
+      - id: hadolint
+      - id: trivy
+      - id: trufflehog
+      - id: semgrep
+      - id: checkov
