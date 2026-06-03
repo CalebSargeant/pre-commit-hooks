@@ -89,7 +89,7 @@ PRE_COMMIT_STAGE=pre-push bash hooks/run-all.sh
 
 ## CI scanning
 
-For these checks in CI, use **[Cinnabar](https://github.com/CalebSargeant/cinnabar) (private repository)** — it packages the security + lint scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
+For these checks in CI, use **[Cinnabar](https://github.com/CalebSargeant/cinnabar) (private repository)** — it packages the security scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
 
 ```yaml
 - uses: CalebSargeant/cinnabar@v1
