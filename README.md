@@ -1,6 +1,6 @@
 # pre-commit-hooks
 
-> **Security & lint scanning has moved to [Cinnabar](https://github.com/MagmaMoose/cinnabar).**
+> **Security scanning and dependency auditing have moved to [Cinnabar](https://github.com/MagmaMoose/cinnabar).**
 > Use cinnabar for Trivy, TruffleHog, Semgrep, Checkov, ShellCheck, actionlint and
 > dependency audits — in CI **and** as pre-commit hooks. This repo now focuses on
 > what cinnabar deliberately doesn't do: **code formatting, file hygiene, and
