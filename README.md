@@ -92,7 +92,7 @@ PRE_COMMIT_STAGE=pre-push bash hooks/run-all.sh
 For these checks in CI, use **[Cinnabar](https://github.com/CalebSargeant/cinnabar) (private repository)** — it packages the security scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
 
 ```yaml
-- uses: CalebSargeant/cinnabar@v1
+- uses: CalebSargeant/cinnabar@a1b2c3d4e5f6 # v1
 ```
 
 _(Earlier versions of this README described a composite action and a `hooks-ci.yml` reusable workflow in this repo; those never shipped. Cinnabar is the supported CI path.)_
