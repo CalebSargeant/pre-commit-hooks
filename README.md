@@ -1,6 +1,6 @@
 # pre-commit-hooks
 
-> **Security scanning and dependency auditing have moved to [Cinnabar](https://github.com/CalebSargeant/cinnabar).**
+> **Security scanning and dependency auditing have moved to [Cinnabar](https://github.com/CalebSargeant/cinnabar) (private repository).**
 > Use cinnabar for Trivy, TruffleHog, Semgrep, Checkov, ShellCheck, actionlint and
 > dependency audits — in CI **and** as pre-commit hooks. This repo now focuses on
 > what cinnabar deliberately doesn't do: **code formatting, file hygiene, and
@@ -90,7 +90,7 @@ PRE_COMMIT_STAGE=pre-push bash hooks/run-all.sh
 
 ## CI scanning
 
-For these checks in CI, use **[Cinnabar](https://github.com/CalebSargeant/cinnabar)** — it packages the security + lint scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
+For these checks in CI, use **[Cinnabar](https://github.com/CalebSargeant/cinnabar) (private repository)** — it packages the security + lint scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
 
 ```yaml
 - uses: CalebSargeant/cinnabar@v1
