@@ -4,8 +4,7 @@
 > Use cinnabar for Trivy, TruffleHog, Semgrep, Checkov, ShellCheck, actionlint and
 > dependency audits — in CI **and** as pre-commit hooks. This repo now focuses on
 > what cinnabar deliberately doesn't do: **code formatting, file hygiene, and
-> GitHub Actions SHA-pinning**. The `security-scan` and `docker-security` hooks
-> below overlap cinnabar and will be removed in a future release.
+> GitHub Actions SHA-pinning**. The `security-scan`, `docker-security`, `terraform-quality`, and `file-quality` hooks below overlap with Cinnabar and will be removed in a future release.
 
 Shared Bash-based pre-commit/pre-push hooks for **formatting, file hygiene, and GitHub Actions SHA-pinning**. Tools are auto-detected and skipped if not installed. Hooks scope to staged files when available; otherwise they fall back to a repository-limited sample to keep runs fast.
 
