@@ -2,6 +2,43 @@
 
 <!-- version list -->
 
+## v1.4.3 (2026-06-03)
+
+### Bug Fixes
+
+- **readme**: Align Cinnabar CI description with intro
+  ([`b1cba5c`](https://github.com/CalebSargeant/pre-commit-hooks/commit/b1cba5c252b18f1bfe95a79d0bc115ca43188acd))
+
+- **README**: Clarify that only security scanning moved to Cinnabar, not linting hooks
+  ([`ecf8833`](https://github.com/CalebSargeant/pre-commit-hooks/commit/ecf883386d1c650eb933be8a3a90d7cd7c220940))
+
+- **readme**: Update Cinnabar link to note private repo
+  ([`5167230`](https://github.com/CalebSargeant/pre-commit-hooks/commit/5167230ddbd5c29ea4e236ce97f215cedf8a8c23))
+
+- **README**: Update Cinnabar repo owner from MagmaMoose to CalebSargeant
+  ([`aeae633`](https://github.com/CalebSargeant/pre-commit-hooks/commit/aeae6333435c627ae50683be9b3f684f1d8a04bb))
+
+### Documentation
+
+- Align repo summary with stated focus list
+  ([`e6700f4`](https://github.com/CalebSargeant/pre-commit-hooks/commit/e6700f4ee83a382ce2683d407495da136034e406))
+
+- Refocus on formatting/hygiene; point security+lint to Cinnabar
+  ([`259e7c8`](https://github.com/CalebSargeant/pre-commit-hooks/commit/259e7c8eac4a1d3bad679a10d7500647f4881fe0))
+
+- Tighten Cinnabar scope description in README
+  ([`5d63b11`](https://github.com/CalebSargeant/pre-commit-hooks/commit/5d63b112de889d15020d87662bb36f05cbac4e9d))
+
+- **readme**: Add GitHub Actions SHA-pinning to repo description
+  ([`82039b5`](https://github.com/CalebSargeant/pre-commit-hooks/commit/82039b5379e52ef90fbb96f00131f257b0133df9))
+
+- **readme**: List all hooks overlapping with Cinnabar
+  ([`d90f696`](https://github.com/CalebSargeant/pre-commit-hooks/commit/d90f6965a0629da2449b8556a0b5cef05b5ddbba))
+
+- **README**: Pin Cinnabar example to commit SHA with semver comment
+  ([`bf5c0fb`](https://github.com/CalebSargeant/pre-commit-hooks/commit/bf5c0fbb63f1374a446e93122b32f20187b0d3e2))
+
+
 ## v1.4.2 (2025-10-25)
 
 ### Chores
