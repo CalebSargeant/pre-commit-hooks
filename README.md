@@ -1,7 +1,7 @@
 # pre-commit-hooks
 
 > **Security scanning and dependency auditing have moved to [Cinnabar](https://github.com/CalebSargeant/cinnabar) (private repository).**
-> Use cinnabar for Trivy, TruffleHog, Semgrep, Checkov, ShellCheck, actionlint and
+> Use cinnabar for Trivy, TruffleHog, Semgrep, Checkov and
 > dependency audits — in CI **and** as pre-commit hooks. This repo now focuses on
 > what cinnabar deliberately doesn't do: **code formatting, file hygiene, and
 > GitHub Actions SHA-pinning**. The `security-scan`, `docker-security`, `terraform-quality`, and `file-quality` hooks below overlap with Cinnabar and will be removed in a future release.
