@@ -1,11 +1,11 @@
 # pre-commit-hooks
 
-> **Security & lint scanning has moved to [Cinnabar](https://github.com/MagmaMoose/cinnabar).**
-> Use cinnabar for Trivy, TruffleHog, Semgrep, Checkov, ShellCheck, actionlint and
+> **Security & lint scanning has moved to [Chargate](https://github.com/MagmaMoose/chargate).**
+> Use chargate for Trivy, TruffleHog, Semgrep, Checkov, ShellCheck, actionlint and
 > dependency audits — in CI **and** as pre-commit hooks. This repo now focuses on
-> what cinnabar deliberately doesn't do: **code formatting, file hygiene, and
+> what chargate deliberately doesn't do: **code formatting, file hygiene, and
 > GitHub Actions SHA-pinning**. The `security-scan` and `docker-security` hooks
-> below overlap cinnabar and will be removed in a future release.
+> below overlap chargate and will be removed in a future release.
 
 Shared Bash-based pre-commit/pre-push hooks for **formatting, file hygiene, and repo hygiene**. Tools are auto-detected and skipped if not installed. Hooks scope to staged files when available; otherwise they fall back to a repository-limited sample to keep runs fast.
 
@@ -90,10 +90,10 @@ PRE_COMMIT_STAGE=pre-push bash hooks/run-all.sh
 
 ## CI scanning
 
-For these checks in CI, use **[Cinnabar](https://github.com/MagmaMoose/cinnabar)** — it packages the security + lint scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
+For these checks in CI, use **[Chargate](https://github.com/MagmaMoose/chargate)** — it packages the security + lint scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
 
 ```yaml
-- uses: MagmaMoose/cinnabar@v1
+- uses: MagmaMoose/chargate@v1
 ```
 
-_(Earlier versions of this README described a composite action and a `hooks-ci.yml` reusable workflow in this repo; those never shipped. Cinnabar is the supported CI path.)_
+_(Earlier versions of this README described a composite action and a `hooks-ci.yml` reusable workflow in this repo; those never shipped. Chargate is the supported CI path.)_
