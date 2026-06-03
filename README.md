@@ -1,6 +1,6 @@
 # pre-commit-hooks
 
-> **Security scanning and dependency auditing have moved to [Cinnabar](https://github.com/MagmaMoose/cinnabar).**
+> **Security scanning and dependency auditing have moved to [Cinnabar](https://github.com/CalebSargeant/cinnabar).**
 > Use cinnabar for Trivy, TruffleHog, Semgrep, Checkov, ShellCheck, actionlint and
 > dependency audits — in CI **and** as pre-commit hooks. This repo now focuses on
 > what cinnabar deliberately doesn't do: **code formatting, file hygiene, and
@@ -14,7 +14,7 @@ Shared Bash-based pre-commit/pre-push hooks for **formatting, file hygiene, repo
 1. Install pre-commit:
    - Homebrew: `brew install pre-commit`
    - Pip: `pipx install pre-commit` or `pip install pre-commit`
-2. Add to your repo’s `.pre-commit-config.yaml`.
+2. Add to your repo's `.pre-commit-config.yaml`.
 
 Option A: Single orchestrator (recommended)
 ```yaml path=null start=null
@@ -90,10 +90,10 @@ PRE_COMMIT_STAGE=pre-push bash hooks/run-all.sh
 
 ## CI scanning
 
-For these checks in CI, use **[Cinnabar](https://github.com/MagmaMoose/cinnabar)** — it packages the security + lint scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
+For these checks in CI, use **[Cinnabar](https://github.com/CalebSargeant/cinnabar)** — it packages the security + lint scanners as a composite GitHub Action and a reusable workflow, sharing the same logic as its pre-commit hooks:
 
 ```yaml
-- uses: MagmaMoose/cinnabar@v1
+- uses: CalebSargeant/cinnabar@v1
 ```
 
 _(Earlier versions of this README described a composite action and a `hooks-ci.yml` reusable workflow in this repo; those never shipped. Cinnabar is the supported CI path.)_
