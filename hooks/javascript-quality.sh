@@ -30,7 +30,7 @@ if [[ -n "$STAGED" ]]; then
     JS_FILES=$(echo "$STAGED" | grep -E "\.(js|ts|jsx|tsx)$" || true)
     CONTEXT="staged"
 else
-    JS_FILES=$(find . -type f \( -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" \) | grep -v "node_modules" | grep -v ".git" | head -20)
+    JS_FILES=$(find . -type f \( -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" \) | grep -v "node_modules" | grep -v ".git" | head -20 || true)
     CONTEXT="repository"
 fi
 

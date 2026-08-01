@@ -39,7 +39,9 @@ if [[ -n "$STAGED" ]]; then
     FILES="$STAGED"
     CONTEXT="staged"
 else
-    FILES=$(find . -type f -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.tf" -o -name "*.hcl" -o -name "*.yaml" -o -name "*.yml" -o -name "*.json" -o -name "*.sh" | grep -v ".git" | grep -v "node_modules" | grep -v ".terragrunt-cache" | head -100)
+    # `|| true`: head closes the pipe early, so find/grep upstream die on
+    # SIGPIPE (141) and `set -o pipefail` would abort the whole scan.
+    FILES=$(find . -type f -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.tf" -o -name "*.hcl" -o -name "*.yaml" -o -name "*.yml" -o -name "*.json" -o -name "*.sh" | grep -v ".git" | grep -v "node_modules" | grep -v ".terragrunt-cache" | head -100 || true)
     CONTEXT="repository"
 fi
 

@@ -30,7 +30,7 @@ if [[ -n "$STAGED" ]]; then
     PY_FILES=$(echo "$STAGED" | grep "\.py$" || true)
     CONTEXT="staged"
 else
-    PY_FILES=$(find . -name "*.py" | grep -v ".git" | head -20)
+    PY_FILES=$(find . -name "*.py" | grep -v ".git" | head -20 || true)
     CONTEXT="repository"
 fi
 

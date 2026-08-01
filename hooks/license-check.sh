@@ -260,7 +260,7 @@ fi
 echo -e "${BOLD}Copyright Notice Check${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-SOURCE_FILES=$(find . -name "*.py" -o -name "*.js" -o -name "*.ts" | grep -v node_modules | grep -v .git | head -10)
+SOURCE_FILES=$(find . -name "*.py" -o -name "*.js" -o -name "*.ts" | grep -v node_modules | grep -v .git | head -10 || true)
 
 if [[ -n "$SOURCE_FILES" ]]; then
     FILES_WITH_COPYRIGHT=0
