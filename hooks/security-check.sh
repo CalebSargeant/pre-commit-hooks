@@ -136,16 +136,19 @@ if [[ -n "$TERRAFORM_FILES" ]]; then
 
         # TFSec
         run_security_tool "TFSec" \
+            "tfsec" \
             "tfsec \"$dir\" --minimum-severity MEDIUM --format lovely || true" \
             "Terraform security scanner"
 
         # Checkov
         run_security_tool "Checkov" \
+            "checkov" \
             "checkov -d \"$dir\" --framework terraform --quiet || true" \
             "Policy-as-Code scanner"
 
         # Terrascan
         run_security_tool "Terrascan" \
+            "terrascan" \
             "terrascan scan -i terraform -d \"$dir\" || true" \
             "IaC security scanner"
     done
