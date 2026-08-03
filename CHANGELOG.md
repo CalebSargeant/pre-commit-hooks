@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.4.4 (2026-08-03)
+
+### Bug Fixes
+
+- **file-quality**: Validate multi-document YAML with safe_load_all
+  ([`493639e`](https://github.com/CalebSargeant/pre-commit-hooks/commit/493639e025f6af33b7b0c49591066f4101cee662))
+
+- **hooks**: Stop SIGPIPE from aborting hooks under pipefail
+  ([`e68d2f0`](https://github.com/CalebSargeant/pre-commit-hooks/commit/e68d2f0930c949877c4b88afc6b8ce4b28bd984e))
+
+- **security-check**: Pass the binary argument to IaC tool invocations
+  ([`3109465`](https://github.com/CalebSargeant/pre-commit-hooks/commit/3109465d50363d0a243b4f3dab3f8feaec5619a3))
+
+
 ## v1.4.3 (2026-06-03)
 
 ### Bug Fixes
