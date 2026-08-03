@@ -27,7 +27,7 @@ STAGED=$(git diff --cached --name-only)
 if [[ -n "$STAGED" ]]; then
     FILES="$STAGED"
 else
-    FILES=$(git ls-files | head -50)
+    FILES=$(git ls-files | head -50 || true)
 fi
 
 # ----------------------------------------------------------------------
@@ -87,12 +87,17 @@ YAML_FILES=$(echo "$FILES" | grep -E "\.(yaml|yml)$" | while read -r f; do [[ -f
 # Syntax check via Python yaml if available
 if [[ -n "$YAML_FILES" ]] && command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
     for yf in $YAML_FILES; do
-        if ! python3 - "$yf" <<'PY' 2>/dev/null
+        if ! YAML_ERR=$(python3 - "$yf" 2>&1 <<'PY'
 import sys, yaml
-yaml.safe_load(open(sys.argv[1]))
+# safe_load_all, not safe_load: `---` separated multi-document streams are
+# valid YAML (Kubernetes manifests especially), and safe_load rejects them.
+with open(sys.argv[1]) as fh:
+    for _ in yaml.safe_load_all(fh):
+        pass
 PY
-        then
+        ); then
             echo -e "${RED}❌ Invalid YAML: $yf${NC}"
+            [[ -n "$YAML_ERR" ]] && echo "$YAML_ERR" | tail -3 | sed 's/^/    /'
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
         fi
     done
@@ -211,12 +216,16 @@ fi
 if [[ -n "$ACTION_FILES" ]] && command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
     while IFS= read -r af; do
         [[ -f "$af" ]] || continue
-        if ! python3 - "$af" <<'PY' 2>/dev/null
+        if ! YAML_ERR=$(python3 - "$af" 2>&1 <<'PY'
 import sys, yaml
-yaml.safe_load(open(sys.argv[1]))
+# safe_load_all: composite actions may ship multi-document YAML too.
+with open(sys.argv[1]) as fh:
+    for _ in yaml.safe_load_all(fh):
+        pass
 PY
-        then
+        ); then
             echo -e "${RED}❌ Invalid YAML: $af${NC}"
+            [[ -n "$YAML_ERR" ]] && echo "$YAML_ERR" | tail -3 | sed 's/^/    /'
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
         fi
     done <<<"$ACTION_FILES"

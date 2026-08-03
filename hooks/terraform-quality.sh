@@ -32,7 +32,7 @@ if [[ -n "$STAGED" ]]; then
     TF_FILES=$(echo "$STAGED" | grep -E "\.(tf|hcl)$" | grep -vE "(\.terragrunt-cache|docker-bake\.hcl$|(^|/)bake\.hcl$)" || true)
     CONTEXT="staged"
 else
-    TF_FILES=$(find . -name "*.tf" -o -name "*.hcl" | grep -vE "(\.git|\.terragrunt-cache|docker-bake\.hcl$|(^|/)bake\.hcl$)" | head -50)
+    TF_FILES=$(find . -name "*.tf" -o -name "*.hcl" | grep -vE "(\.git|\.terragrunt-cache|docker-bake\.hcl$|(^|/)bake\.hcl$)" | head -50 || true)
     CONTEXT="repository"
 fi
 

@@ -110,7 +110,10 @@ if [[ -n "$STAGED_FILES" ]]; then
   FILES="$STAGED_FILES"
   CONTEXT="staged files"
 else
-  FILES=$(git ls-files | head -100)  # Limit to avoid overwhelming output
+  # `|| true`: in a repo whose file list exceeds the pipe buffer, git blocks on
+  # write, head exits, and git dies on SIGPIPE — which pipefail would turn into
+  # an abort of the entire pipeline, intermittently.
+  FILES=$(git ls-files | head -100 || true)  # Limit to avoid overwhelming output
   CONTEXT="repository files"
 fi
 

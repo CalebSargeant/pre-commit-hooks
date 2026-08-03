@@ -39,7 +39,9 @@ if [[ -n "$STAGED" ]]; then
     FILES="$STAGED"
     CONTEXT="staged"
 else
-    FILES=$(find . -type f -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.tf" -o -name "*.hcl" -o -name "*.yaml" -o -name "*.yml" -o -name "*.json" -o -name "*.sh" | grep -v ".git" | grep -v "node_modules" | grep -v ".terragrunt-cache" | head -100)
+    # `|| true`: head closes the pipe early, so find/grep upstream die on
+    # SIGPIPE (141) and `set -o pipefail` would abort the whole scan.
+    FILES=$(find . -type f -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.tf" -o -name "*.hcl" -o -name "*.yaml" -o -name "*.yml" -o -name "*.json" -o -name "*.sh" | grep -v ".git" | grep -v "node_modules" | grep -v ".terragrunt-cache" | head -100 || true)
     CONTEXT="repository"
 fi
 
@@ -134,16 +136,19 @@ if [[ -n "$TERRAFORM_FILES" ]]; then
 
         # TFSec
         run_security_tool "TFSec" \
+            "tfsec" \
             "tfsec \"$dir\" --minimum-severity MEDIUM --format lovely || true" \
             "Terraform security scanner"
 
         # Checkov
         run_security_tool "Checkov" \
+            "checkov" \
             "checkov -d \"$dir\" --framework terraform --quiet || true" \
             "Policy-as-Code scanner"
 
         # Terrascan
         run_security_tool "Terrascan" \
+            "terrascan" \
             "terrascan scan -i terraform -d \"$dir\" || true" \
             "IaC security scanner"
     done
