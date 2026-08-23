@@ -93,3 +93,10 @@
   always_run: true
   stages: [pre-push]
   require_serial: true
+
+- id: strip-ai-coauthors
+  name: 🧹 Strip AI co-author trailers
+  description: Remove Co-Authored-By lines naming an AI vendor or agent, and "Generated with" footers, from the commit message. Rewrites in place, never fails the commit.
+  entry: hooks/strip-ai-coauthors.sh
+  language: script
+  stages: [commit-msg]
