@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.5.0 (2026-08-23)
+
+### Features
+
+- **hooks**: Strip AI co-author trailers at commit-msg
+  ([`1a2edda`](https://github.com/CalebSargeant/pre-commit-hooks/commit/1a2eddadaa5f36b227ea70cebf107d57cf62f77c))
+
+
 ## v1.4.4 (2026-08-03)
 
 ### Bug Fixes
