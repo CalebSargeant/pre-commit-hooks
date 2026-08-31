@@ -156,6 +156,38 @@ done
 echo -e "${BOLD}Additional Terraform Checks${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+# Format a terragrunt directory, across both CLI generations.
+#
+#   tg_hclfmt <dir>            rewrite files in place
+#   tg_hclfmt <dir> --check    report only, non-zero if reformatting is needed
+#
+# terragrunt v1 renamed `hclfmt` to `hcl fmt` and dropped the `--terragrunt-`
+# flag prefix. Both pre-v1 invocations are hard errors on v1 ("flag provided but
+# not defined"), exiting 1, which made this whole section useless on any modern
+# terragrunt: the check branch reported formatting issues for every file
+# regardless of formatting, and the autofix branch (`|| true`) silently
+# reformatted nothing while still printing "Auto-formatted HCL".
+#
+# Probed rather than version-parsed, so this keeps working across whatever the
+# next rename is.
+tg_hclfmt() {
+    local dir=$1 mode=${2:-}
+
+    if terragrunt hcl fmt --help &> /dev/null; then
+        if [[ "$mode" = "--check" ]]; then
+            terragrunt hcl fmt --check --working-dir "$dir"
+        else
+            terragrunt hcl fmt --working-dir "$dir"
+        fi
+    else
+        if [[ "$mode" = "--check" ]]; then
+            terragrunt hclfmt --terragrunt-check --terragrunt-working-dir "$dir"
+        else
+            terragrunt hclfmt --terragrunt-working-dir "$dir"
+        fi
+    fi
+}
+
 # Check for common anti-patterns
 echo -e "${BLUE}Checking for Terraform anti-patterns...${NC}"
 CHECKS_RUN=$((CHECKS_RUN + 1))
@@ -220,11 +252,11 @@ if [[ -n "$HCL_FILES" ]]; then
             # Basic HCL syntax check
             if command -v terragrunt &> /dev/null; then
                 if [[ "${HOOKS_AUTOFIX}" = "1" ]]; then
-                    terragrunt hclfmt --terragrunt-working-dir "$(dirname "$hcl_file")" >/dev/null 2>&1 || true
+                    tg_hclfmt "$(dirname "$hcl_file")" >/dev/null 2>&1 || true
                     git add -- "$hcl_file" 2>/dev/null || true
                     echo -e "  ${GREEN}✓ Auto-formatted HCL${NC}"
                 else
-                    if terragrunt hclfmt --terragrunt-check --terragrunt-working-dir "$(dirname "$hcl_file")" >/dev/null 2>&1; then
+                    if tg_hclfmt "$(dirname "$hcl_file")" --check >/dev/null 2>&1; then
                         echo -e "  ${GREEN}✓ HCL formatting OK${NC}"
                     else
                         echo -e "  ${YELLOW}⚠ HCL formatting issues${NC}"

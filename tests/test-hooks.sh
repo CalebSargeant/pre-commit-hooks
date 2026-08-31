@@ -175,6 +175,33 @@ else
 fi
 rm -rf "$dir"
 
+# Regression: the Terragrunt formatting check used the pre-v1 CLI
+# (`hclfmt --terragrunt-check --terragrunt-working-dir`). terragrunt v1 renamed
+# the subcommand to `hcl fmt` and dropped the `--terragrunt-` flag prefix, so
+# both old invocations exit 1 with "flag provided but not defined". That made
+# the check branch report formatting issues for every correctly-formatted file,
+# and the autofix branch silently format nothing while claiming otherwise.
+if command -v terragrunt &> /dev/null; then
+    dir="$(new_repo)"
+    # Canonically formatted: single space around =, no trailing whitespace.
+    cat > "$dir/terragrunt.hcl" <<'HCL'
+inputs = {
+  name = "example"
+}
+HCL
+    git -C "$dir" add terragrunt.hcl
+    run_hook "$dir" "$HOOKS/terraform-quality.sh"
+    if grep -q "HCL formatting issues" <<< "$OUT"; then
+        fail "well-formatted HCL is not reported as misformatted" \
+             "the terragrunt CLI invocation is probably wrong for this version"
+    else
+        pass "well-formatted HCL is not reported as misformatted"
+    fi
+    rm -rf "$dir"
+else
+    echo -e "  ${YELLOW}SKIP${NC} terragrunt formatting check (terragrunt not found)"
+fi
+
 echo
 echo "───────────────────────────────────"
 echo -e "${BOLD}$PASS passed, $FAIL failed${NC}"
