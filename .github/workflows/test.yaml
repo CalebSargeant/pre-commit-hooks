@@ -1,0 +1,26 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hooks:
+    name: Hook regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # No scanners are installed on purpose. The hooks are supposed to skip
+      # missing tools cleanly, and the tests assert exactly that: a staged .tf
+      # or .hcl file must not fail the hook just because tfsec/checkov/terrascan
+      # are absent. Installing them here would hide the class of bug these
+      # tests exist to catch.
+      - name: Run hook regression tests
+        run: tests/test-hooks.sh

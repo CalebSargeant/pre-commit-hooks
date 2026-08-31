@@ -176,9 +176,24 @@ for tf_file in $TF_FILES; do
             ANTIPATTERN_ISSUES=$((ANTIPATTERN_ISSUES + 1))
         fi
 
-        # Check for deprecated syntax
-        if grep -q "\${.*}" "$tf_file" 2>/dev/null; then
-            echo -e "  ${YELLOW}⚠ Old interpolation syntax in $tf_file${NC}"
+        # Check for deprecated syntax.
+        #
+        # What is actually deprecated (Terraform 0.12+) is a string whose ENTIRE
+        # value is one interpolation: `count = "${var.enabled}"`, which should be
+        # written `count = var.enabled`. Interpolation itself is not deprecated
+        # and cannot be avoided: `"${path.module}/x"`, `"prefix-${var.env}"` and
+        # every terragrunt `source = "${get_repo_root()}/..."` are all correct.
+        #
+        # This used to be `grep -q "\${.*}"`, which matched any interpolation
+        # anywhere and so flagged over half of every real Terraform repo,
+        # failing the hook on any commit that staged a .tf or .hcl file.
+        #
+        # The pattern below anchors on `= "${...}"` as the whole right-hand
+        # side, and excludes `{`, `}` and `"` inside the interpolation so that
+        # concatenations ("${a}${b}") and nested-quote calls are not matched.
+        # It prefers false negatives over false positives.
+        if grep -qE '=[[:space:]]*"\$\{[^{}"]*\}"[[:space:]]*(#.*)?$' "$tf_file" 2>/dev/null; then
+            echo -e "  ${YELLOW}⚠ Redundant interpolation-only string in $tf_file (\"\${x}\" can be written x)${NC}"
             ANTIPATTERN_ISSUES=$((ANTIPATTERN_ISSUES + 1))
         fi
     fi
