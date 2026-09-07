@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.5.1 (2026-09-07)
+
+### Bug Fixes
+
+- **terraform-quality**: Only flag interpolation-only strings as deprecated
+  ([`27a46f4`](https://github.com/CalebSargeant/pre-commit-hooks/commit/27a46f4d91280336a6f37b71387ce0b13ac0fed6))
+
+- **terraform-quality**: Use the terragrunt v1 CLI for HCL formatting
+  ([`bd45706`](https://github.com/CalebSargeant/pre-commit-hooks/commit/bd4570689d238747493373d9bdf71b8e94943a5e))
+
+- **tests**: Mark test-hooks.sh executable
+  ([`340c835`](https://github.com/CalebSargeant/pre-commit-hooks/commit/340c835d0103e0c8f8adacd77bb4bbd4bc49b84f))
+
+
 ## v1.5.0 (2026-08-23)
 
 ### Features
