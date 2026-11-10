@@ -2,6 +2,115 @@
 
 <!-- version list -->
 
+## v1.6.0 (2026-11-10)
+
+### Bug Fixes
+
+- **file-quality**: Validate multi-document YAML with safe_load_all
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **hooks**: Stop SIGPIPE from aborting hooks under pipefail
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **readme**: Align Cinnabar CI description with intro
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **README**: Clarify that only security scanning moved to Cinnabar, not linting hooks
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **readme**: Update Cinnabar link to note private repo
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **README**: Update Cinnabar repo owner from MagmaMoose to CalebSargeant
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **security-check**: Pass the binary argument to IaC tool invocations
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **terraform-quality**: Only flag interpolation-only strings as deprecated
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **terraform-quality**: Use the terragrunt v1 CLI for HCL formatting
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **tests**: Mark test-hooks.sh executable
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+### Chores
+
+- **deps**: Bump CalebSargeant/reusable-workflows from 1.0.3 to 1.0.10
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **deps**: Bump CalebSargeant/reusable-workflows from 1.0.3 to 1.0.10
+  ([#13](https://github.com/CalebSargeant/pre-commit-hooks/pull/13),
+  [`7b1b351`](https://github.com/CalebSargeant/pre-commit-hooks/commit/7b1b351767bac4ce16c2549916aaffe7b56ba395))
+
+- **deps**: Bump CalebSargeant/reusable-workflows/.github/workflows/semantic-release.yaml
+  ([#26](https://github.com/CalebSargeant/pre-commit-hooks/pull/26),
+  [`ba016a5`](https://github.com/CalebSargeant/pre-commit-hooks/commit/ba016a5060ba575508cc0e3953c54d85b31705a2))
+
+- **deps**: Bump CalebSargeant/reusable-workflows/.github/workflows/semantic-release.yaml
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **deps**: Bump CalebSargeant/reusable-workflows/.github/workflows/semantic-release.yaml from
+  1.0.24 to 1.16.0 ([#26](https://github.com/CalebSargeant/pre-commit-hooks/pull/26),
+  [`ba016a5`](https://github.com/CalebSargeant/pre-commit-hooks/commit/ba016a5060ba575508cc0e3953c54d85b31705a2))
+
+- **deps**: Bump CalebSargeant/reusable-workflows/.github/workflows/semantic-release.yaml from 1.0.3
+  to 1.0.24 ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+### Continuous Integration
+
+- Pass the release app under the secret names the workflow declares
+  ([#26](https://github.com/CalebSargeant/pre-commit-hooks/pull/26),
+  [`ba016a5`](https://github.com/CalebSargeant/pre-commit-hooks/commit/ba016a5060ba575508cc0e3953c54d85b31705a2))
+
+### Documentation
+
+- Align repo summary with stated focus list
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- Refocus on formatting/hygiene; point security+lint to Cinnabar
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- Tighten Cinnabar scope description in README
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **readme**: Add GitHub Actions SHA-pinning to repo description
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **readme**: List all hooks overlapping with Cinnabar
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+- **README**: Pin Cinnabar example to commit SHA with semver comment
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+### Features
+
+- **hooks**: Strip AI co-author trailers at commit-msg
+  ([#19](https://github.com/CalebSargeant/pre-commit-hooks/pull/19),
+  [`fcb8d72`](https://github.com/CalebSargeant/pre-commit-hooks/commit/fcb8d7202f44047213c169a96443bd28bce082fa))
+
+
 ## v1.5.1 (2026-09-07)
 
 ### Bug Fixes
